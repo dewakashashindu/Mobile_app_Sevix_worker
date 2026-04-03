@@ -8,6 +8,8 @@ import 'settings_screen.dart';
 import 'job_feed_screen.dart';
 import 'worker_job.dart';
 import 'bid_status_screen.dart';
+import 'wallet_screen.dart';
+import 'notifications_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -218,6 +220,28 @@ class _RootScreenState extends State<_RootScreen> {
     );
   }
 
+  void _openWallet() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => WalletScreen(
+          onBack: () => Navigator.of(context).pop(),
+          selectedLanguage: _language ?? 'en',
+        ),
+      ),
+    );
+  }
+
+  void _openNotifications() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => NotificationsScreen(
+          selectedLanguage: _language ?? 'en',
+          onBack: () => Navigator.of(context).pop(),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Auth flow
@@ -383,7 +407,7 @@ class _RootScreenState extends State<_RootScreen> {
                                   Icons.notifications_outlined,
                                   color: Colors.white,
                                 ),
-                                onPressed: () {},
+                                onPressed: _openNotifications,
                               ),
                             ),
                           ],
@@ -674,11 +698,7 @@ class _RootScreenState extends State<_RootScreen> {
                             icon: Icons.account_balance_wallet_outlined,
                             color: const Color(0xFFF59E0B),
                             onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Wallet screen coming soon'),
-                                ),
-                              );
+                              _openWallet();
                             },
                           ),
                         ),
