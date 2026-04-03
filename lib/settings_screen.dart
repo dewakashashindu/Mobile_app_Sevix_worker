@@ -47,6 +47,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _pushNotifications = true;
   bool _smsNotifications = false;
 
+  // Work preferences
+  bool _availableForJobs = true;
+  bool _autoAcceptNearby = false;
+  double _maxTravelDistance = 12;
+
+  // App experience settings
+  bool _darkModePreview = false;
+  bool _biometricLock = false;
+  bool _dataSaverMode = false;
+
   @override
   void dispose() {
     _currentPasswordController.dispose();
@@ -130,6 +140,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return 'அறிவிப்புகள்';
       default:
         return 'Notifications';
+    }
+  }
+
+  String _workPreferencesLabel() {
+    switch (_language) {
+      case 'si':
+        return 'රැකියා මනාපයන්';
+      case 'ta':
+        return 'வேலை விருப்பங்கள்';
+      default:
+        return 'Work Preferences';
+    }
+  }
+
+  String _appExperienceLabel() {
+    switch (_language) {
+      case 'si':
+        return 'යෙදුම් අත්දැකීම';
+      case 'ta':
+        return 'அப் அனுபவம்';
+      default:
+        return 'App Experience';
+    }
+  }
+
+  String _supportLabel() {
+    switch (_language) {
+      case 'si':
+        return 'සහාය සහ නීති';
+      case 'ta':
+        return 'ஆதரவு மற்றும் சட்டம்';
+      default:
+        return 'Support & Legal';
     }
   }
 
@@ -594,6 +637,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _showFeatureMessage(String featureName) {
+    _showSnack(
+      _language == 'en'
+          ? '$featureName opened'
+          : _language == 'si'
+          ? '$featureName විවෘත කරන ලදී'
+          : '$featureName திறக்கப்பட்டது',
+    );
+  }
+
   Widget _inputGroup({
     required String label,
     required TextEditingController controller,
@@ -667,437 +720,956 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: widget.onBack,
-        ),
-        title: Text(_settingsTitle()),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+      backgroundColor: const Color(0xFFF3F6FC),
+      body: SafeArea(
         child: Column(
           children: [
-            // Account card
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+            Container(
+              margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xFF07122D),
+                    Color(0xFF0B1533),
+                    Color(0xFF173775),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF0B1533).withValues(alpha: 0.25),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
               ),
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+              child: Row(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: widget.onBack,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: theme.dividerColor.withOpacity(0.3),
-                          ),
-                          child: Icon(
-                            Icons.person,
-                            size: 18,
-                            color: theme.colorScheme.onSurface,
+                        Text(
+                          _settingsTitle(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(height: 2),
                         Text(
-                          _accountLabel(),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
+                          _language == 'en'
+                              ? 'Manage your account and preferences'
+                              : _language == 'si'
+                              ? 'ඔබගේ ගිණුම සහ මනාපයන් කළමනාකරණය කරන්න'
+                              : 'உங்கள் கணக்கு மற்றும் விருப்பங்களை நிர்வகிக்கவும்',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.82),
+                            fontSize: 12,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    ListTile(
-                      onTap: widget.onOpenProfile,
-                      leading: CircleAvatar(
-                        backgroundColor: theme.dividerColor.withOpacity(0.3),
-                        child: Icon(
-                          Icons.person_outline,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                      title: Text(
-                        _language == 'en'
-                            ? 'My Profile'
-                            : _language == 'si'
-                            ? 'මගේ පැතිකඩ'
-                            : 'என் சுயவிவரம்',
-                      ),
-                      subtitle: Text(
-                        _language == 'en'
-                            ? 'View your worker profile'
-                            : _language == 'si'
-                            ? 'ඔබගේ සේවක පැතිකඩ බලන්න'
-                            : 'உங்கள் தொழிலாளர் சுயவிவரத்தைப் பார்க்கவும்',
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                    ),
-                    const Divider(height: 8),
-                    ListTile(
-                      onTap: _openEditInfoSheet,
-                      leading: CircleAvatar(
-                        backgroundColor: theme.dividerColor.withOpacity(0.3),
-                        child: Icon(
-                          Icons.edit_outlined,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                      title: Text(
-                        _language == 'en'
-                            ? 'Edit Information'
-                            : _language == 'si'
-                            ? 'තොරතුරු සංස්කරණය'
-                            : 'தகவலைத் திருத்து',
-                      ),
-                      subtitle: Text('$_userName, $_userEmail'),
-                      trailing: const Icon(Icons.chevron_right),
-                    ),
-                    const Divider(height: 8),
-                    ListTile(
-                      onTap: _openResetPasswordSheet,
-                      leading: const CircleAvatar(
-                        backgroundColor: Color(0xFFFFEBEE),
-                        child: Icon(
-                          Icons.lock_outline,
-                          color: Color(0xFFE74C3C),
-                        ),
-                      ),
-                      title: Text(
-                        _language == 'en'
-                            ? 'Reset Password'
-                            : _language == 'si'
-                            ? 'මුරපදය නැවත සකසන්න'
-                            : 'கடவுச்சொல்லை மீட்டமை',
-                      ),
-                      subtitle: Text(
-                        _language == 'en'
-                            ? 'Change your password'
-                            : _language == 'si'
-                            ? 'ඔබගේ මුරපදය වෙනස් කරන්න'
-                            : 'உங்கள் கடவுச்சொல்லை மாற்றவும்',
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                    ),
-                  ],
-                ),
+                  ),
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor: Colors.white.withValues(alpha: 0.16),
+                    child: const Icon(Icons.settings, color: Colors.white),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-
-            // Preferences
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: theme.dividerColor.withOpacity(0.3),
-                          ),
-                          child: Icon(
-                            Icons.tune,
-                            size: 18,
-                            color: theme.colorScheme.onSurface,
-                          ),
+                    // Account card
+                    Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: theme.dividerColor.withValues(alpha: 0.3),
+                                  ),
+                                  child: Icon(
+                                    Icons.person,
+                                    size: 18,
+                                    color: theme.colorScheme.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  _accountLabel(),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            ListTile(
+                              onTap: widget.onOpenProfile,
+                              leading: CircleAvatar(
+                                backgroundColor: theme.dividerColor.withValues(alpha: 
+                                  0.3,
+                                ),
+                                child: Icon(
+                                  Icons.person_outline,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                              title: Text(
+                                _language == 'en'
+                                    ? 'My Profile'
+                                    : _language == 'si'
+                                    ? 'මගේ පැතිකඩ'
+                                    : 'என் சுயவிவரம்',
+                              ),
+                              subtitle: Text(
+                                _language == 'en'
+                                    ? 'View your worker profile'
+                                    : _language == 'si'
+                                    ? 'ඔබගේ සේවක පැතිකඩ බලන්න'
+                                    : 'உங்கள் தொழிலாளர் சுயவிவரத்தைப் பார்க்கவும்',
+                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                            ),
+                            const Divider(height: 8),
+                            ListTile(
+                              onTap: _openEditInfoSheet,
+                              leading: CircleAvatar(
+                                backgroundColor: theme.dividerColor.withValues(alpha: 
+                                  0.3,
+                                ),
+                                child: Icon(
+                                  Icons.edit_outlined,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                              title: Text(
+                                _language == 'en'
+                                    ? 'Edit Information'
+                                    : _language == 'si'
+                                    ? 'තොරතුරු සංස්කරණය'
+                                    : 'தகவலைத் திருத்து',
+                              ),
+                              subtitle: Text('$_userName, $_userEmail'),
+                              trailing: const Icon(Icons.chevron_right),
+                            ),
+                            const Divider(height: 8),
+                            ListTile(
+                              onTap: _openResetPasswordSheet,
+                              leading: const CircleAvatar(
+                                backgroundColor: Color(0xFFFFEBEE),
+                                child: Icon(
+                                  Icons.lock_outline,
+                                  color: Color(0xFFE74C3C),
+                                ),
+                              ),
+                              title: Text(
+                                _language == 'en'
+                                    ? 'Reset Password'
+                                    : _language == 'si'
+                                    ? 'මුරපදය නැවත සකසන්න'
+                                    : 'கடவுச்சொல்லை மீட்டமை',
+                              ),
+                              subtitle: Text(
+                                _language == 'en'
+                                    ? 'Change your password'
+                                    : _language == 'si'
+                                    ? 'ඔබගේ මුරපදය වෙනස් කරන්න'
+                                    : 'உங்கள் கடவுச்சொல்லை மாற்றவும்',
+                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        Text(
-                          _preferencesLabel(),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                     const SizedBox(height: 16),
-                    ListTile(
-                      onTap: _openLanguageSheet,
-                      leading: const CircleAvatar(
-                        backgroundColor: Color(0xFFE3F2FD),
-                        child: Icon(Icons.language, color: Color(0xFF3498DB)),
-                      ),
-                      title: Text(_languageLabel()),
-                      subtitle: Text(
-                        _language == 'en'
-                            ? 'English'
-                            : _language == 'si'
-                            ? 'සිංහල'
-                            : 'தமிழ்',
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
 
-            // Notifications
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: theme.dividerColor.withOpacity(0.3),
-                          ),
-                          child: Icon(
-                            Icons.notifications,
-                            size: 18,
-                            color: theme.colorScheme.onSurface,
-                          ),
+                    // Preferences
+                    Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: theme.dividerColor.withValues(alpha: 0.3),
+                                  ),
+                                  child: Icon(
+                                    Icons.tune,
+                                    size: 18,
+                                    color: theme.colorScheme.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  _preferencesLabel(),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            ListTile(
+                              onTap: _openLanguageSheet,
+                              leading: const CircleAvatar(
+                                backgroundColor: Color(0xFFE3F2FD),
+                                child: Icon(
+                                  Icons.language,
+                                  color: Color(0xFF3498DB),
+                                ),
+                              ),
+                              title: Text(_languageLabel()),
+                              subtitle: Text(
+                                _language == 'en'
+                                    ? 'English'
+                                    : _language == 'si'
+                                    ? 'සිංහල'
+                                    : 'தமிழ்',
+                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        Text(
-                          _notificationsLabel(),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                     const SizedBox(height: 16),
-                    SwitchListTile.adaptive(
-                      value: _emailNotifications,
-                      onChanged: (v) => setState(() => _emailNotifications = v),
-                      secondary: CircleAvatar(
-                        backgroundColor: theme.dividerColor.withOpacity(0.3),
-                        child: Icon(
-                          Icons.mail_outline,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                      title: Text(
-                        _language == 'en'
-                            ? 'Email Notifications'
-                            : _language == 'si'
-                            ? 'විද්‍යුත් තැපැල් දැනුම්දීම්'
-                            : 'மின்னஞ்சல் அறிவிப்புகள்',
-                      ),
-                    ),
-                    const Divider(height: 8),
-                    SwitchListTile.adaptive(
-                      value: _pushNotifications,
-                      onChanged: (v) => setState(() => _pushNotifications = v),
-                      secondary: CircleAvatar(
-                        backgroundColor: theme.dividerColor.withOpacity(0.3),
-                        child: Icon(
-                          Icons.phone_iphone,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                      title: Text(
-                        _language == 'en'
-                            ? 'Push Notifications'
-                            : _language == 'si'
-                            ? 'තල්ලු දැනුම්දීම්'
-                            : 'புஷ் அறிவிப்புகள்',
-                      ),
-                    ),
-                    const Divider(height: 8),
-                    SwitchListTile.adaptive(
-                      value: _smsNotifications,
-                      onChanged: (v) => setState(() => _smsNotifications = v),
-                      secondary: CircleAvatar(
-                        backgroundColor: theme.dividerColor.withOpacity(0.3),
-                        child: Icon(
-                          Icons.chat_bubble_outline,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                      title: Text(
-                        _language == 'en'
-                            ? 'SMS Notifications'
-                            : _language == 'si'
-                            ? 'SMS දැනුම්දීම්'
-                            : 'SMS அறிவிப்புகள்',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
 
-            // About
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: theme.dividerColor.withOpacity(0.3),
-                          ),
-                          child: Icon(
-                            Icons.info_outline,
-                            size: 18,
-                            color: theme.colorScheme.onSurface,
-                          ),
+                    // Work preferences
+                    Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: theme.dividerColor.withValues(alpha: 0.3),
+                                  ),
+                                  child: Icon(
+                                    Icons.work_outline,
+                                    size: 18,
+                                    color: theme.colorScheme.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  _workPreferencesLabel(),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            SwitchListTile.adaptive(
+                              value: _availableForJobs,
+                              onChanged: (v) =>
+                                  setState(() => _availableForJobs = v),
+                              secondary: CircleAvatar(
+                                backgroundColor: theme.dividerColor.withValues(alpha: 
+                                  0.3,
+                                ),
+                                child: Icon(
+                                  Icons.toggle_on_outlined,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                              title: Text(
+                                _language == 'en'
+                                    ? 'Available for jobs'
+                                    : _language == 'si'
+                                    ? 'රැකියා සඳහා ලබාගත හැක'
+                                    : 'வேலைகளுக்கு தயாராக உள்ளேன்',
+                              ),
+                            ),
+                            const Divider(height: 8),
+                            SwitchListTile.adaptive(
+                              value: _autoAcceptNearby,
+                              onChanged: (v) =>
+                                  setState(() => _autoAcceptNearby = v),
+                              secondary: CircleAvatar(
+                                backgroundColor: theme.dividerColor.withValues(alpha: 
+                                  0.3,
+                                ),
+                                child: Icon(
+                                  Icons.flash_on_outlined,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                              title: Text(
+                                _language == 'en'
+                                    ? 'Auto-accept nearby job alerts'
+                                    : _language == 'si'
+                                    ? 'ලඟ රැකියා ඇඟවීම් ස්වයංක්‍රීයව පිළිගන්න'
+                                    : 'அருகிலுள்ள வேலை எச்சரிக்கைகளை தானாக ஏற்கவும்',
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _language == 'en'
+                                  ? 'Maximum travel distance'
+                                  : _language == 'si'
+                                  ? 'උපරිම ගමන් දුර'
+                                  : 'அதிகபட்ச பயண தூரம்',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Slider(
+                                    value: _maxTravelDistance,
+                                    min: 2,
+                                    max: 40,
+                                    divisions: 19,
+                                    label: '${_maxTravelDistance.round()} km',
+                                    onChanged: (v) =>
+                                        setState(() => _maxTravelDistance = v),
+                                  ),
+                                ),
+                                Text(
+                                  '${_maxTravelDistance.round()} km',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        Text(
-                          _aboutLabel(),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'Sevix Worker',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _language == 'en'
-                          ? 'Version 1.0.0'
-                          : _language == 'si'
-                          ? 'අනුවාදය 1.0.0'
-                          : 'பதிப்பு 1.0.0',
-                      style: const TextStyle(fontSize: 14, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      _language == 'en'
-                          ? '© 2025 Sevix. All rights reserved.'
-                          : _language == 'si'
-                          ? '© 2025 Sevix. සියලු හිමිකම් ඇවිරිණි.'
-                          : '© 2025 Sevix. அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
 
-            // Account actions
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: theme.dividerColor.withOpacity(0.3),
-                          ),
-                          child: Icon(
-                            Icons.shield_outlined,
-                            size: 18,
-                            color: theme.colorScheme.onSurface,
-                          ),
+                    // App experience
+                    Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: theme.dividerColor.withValues(alpha: 0.3),
+                                  ),
+                                  child: Icon(
+                                    Icons.palette_outlined,
+                                    size: 18,
+                                    color: theme.colorScheme.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  _appExperienceLabel(),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            SwitchListTile.adaptive(
+                              value: _darkModePreview,
+                              onChanged: (v) =>
+                                  setState(() => _darkModePreview = v),
+                              secondary: CircleAvatar(
+                                backgroundColor: theme.dividerColor.withValues(alpha: 
+                                  0.3,
+                                ),
+                                child: Icon(
+                                  Icons.dark_mode_outlined,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                              title: Text(
+                                _language == 'en'
+                                    ? 'Dark mode (preview)'
+                                    : _language == 'si'
+                                    ? 'අඳුරු ආකාරය (පරීක්ෂණය)'
+                                    : 'டார்க் மோடு (முன்னோட்டம்)',
+                              ),
+                            ),
+                            const Divider(height: 8),
+                            SwitchListTile.adaptive(
+                              value: _biometricLock,
+                              onChanged: (v) =>
+                                  setState(() => _biometricLock = v),
+                              secondary: CircleAvatar(
+                                backgroundColor: theme.dividerColor.withValues(alpha: 
+                                  0.3,
+                                ),
+                                child: Icon(
+                                  Icons.fingerprint,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                              title: Text(
+                                _language == 'en'
+                                    ? 'Biometric app lock'
+                                    : _language == 'si'
+                                    ? 'ජෛවමිතික යෙදුම් අගුල'
+                                    : 'பயோமெட்ரிக் ஆப் பூட்டு',
+                              ),
+                            ),
+                            const Divider(height: 8),
+                            SwitchListTile.adaptive(
+                              value: _dataSaverMode,
+                              onChanged: (v) =>
+                                  setState(() => _dataSaverMode = v),
+                              secondary: CircleAvatar(
+                                backgroundColor: theme.dividerColor.withValues(alpha: 
+                                  0.3,
+                                ),
+                                child: Icon(
+                                  Icons.data_saver_off_outlined,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                              title: Text(
+                                _language == 'en'
+                                    ? 'Data saver mode'
+                                    : _language == 'si'
+                                    ? 'දත්ත ඉතිරි කිරීමේ ආකාරය'
+                                    : 'டேட்டா சேவர் முறை',
+                              ),
+                            ),
+                            const Divider(height: 8),
+                            ListTile(
+                              onTap: () => _showFeatureMessage(
+                                _language == 'en'
+                                    ? 'Cache cleared'
+                                    : _language == 'si'
+                                    ? 'හැඹිලි මකා දමන ලදී'
+                                    : 'கேச் நீக்கப்பட்டது',
+                              ),
+                              leading: const CircleAvatar(
+                                backgroundColor: Color(0xFFEDE7F6),
+                                child: Icon(
+                                  Icons.cleaning_services_outlined,
+                                  color: Color(0xFF5E35B1),
+                                ),
+                              ),
+                              title: Text(
+                                _language == 'en'
+                                    ? 'Clear app cache'
+                                    : _language == 'si'
+                                    ? 'යෙදුම් හැඹිලිය මකා දමන්න'
+                                    : 'அப் கேச்சை அழிக்கவும்',
+                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        Text(
-                          _accountActionsLabel(),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                     const SizedBox(height: 16),
-                    ListTile(
-                      onTap: widget.onLogout,
-                      leading: const CircleAvatar(
-                        backgroundColor: Color(0xFFFFF3E0),
-                        child: Icon(Icons.logout, color: Color(0xFFFF9800)),
+
+                    // Notifications
+                    Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      title: Text(
-                        _logoutLabel(),
-                        style: const TextStyle(color: Color(0xFFFF9800)),
-                      ),
-                      subtitle: Text(
-                        _language == 'en'
-                            ? 'Sign out of your account'
-                            : _language == 'si'
-                            ? 'ඔබේ ගිණුමෙන් ඉවත් වන්න'
-                            : 'உங்கள் கணக்கிலிருந்து வெளியேறவும்',
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                    ),
-                    const Divider(height: 8),
-                    ListTile(
-                      onTap: _confirmDeleteAccount,
-                      leading: const CircleAvatar(
-                        backgroundColor: Color(0xFFFFEBEE),
-                        child: Icon(
-                          Icons.delete_outline,
-                          color: Color(0xFFE74C3C),
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: theme.dividerColor.withValues(alpha: 0.3),
+                                  ),
+                                  child: Icon(
+                                    Icons.notifications,
+                                    size: 18,
+                                    color: theme.colorScheme.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  _notificationsLabel(),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            SwitchListTile.adaptive(
+                              value: _emailNotifications,
+                              onChanged: (v) =>
+                                  setState(() => _emailNotifications = v),
+                              secondary: CircleAvatar(
+                                backgroundColor: theme.dividerColor.withValues(alpha: 
+                                  0.3,
+                                ),
+                                child: Icon(
+                                  Icons.mail_outline,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                              title: Text(
+                                _language == 'en'
+                                    ? 'Email Notifications'
+                                    : _language == 'si'
+                                    ? 'විද්‍යුත් තැපැල් දැනුම්දීම්'
+                                    : 'மின்னஞ்சல் அறிவிப்புகள்',
+                              ),
+                            ),
+                            const Divider(height: 8),
+                            SwitchListTile.adaptive(
+                              value: _pushNotifications,
+                              onChanged: (v) =>
+                                  setState(() => _pushNotifications = v),
+                              secondary: CircleAvatar(
+                                backgroundColor: theme.dividerColor.withValues(alpha: 
+                                  0.3,
+                                ),
+                                child: Icon(
+                                  Icons.phone_iphone,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                              title: Text(
+                                _language == 'en'
+                                    ? 'Push Notifications'
+                                    : _language == 'si'
+                                    ? 'තල්ලු දැනුම්දීම්'
+                                    : 'புஷ் அறிவிப்புகள்',
+                              ),
+                            ),
+                            const Divider(height: 8),
+                            SwitchListTile.adaptive(
+                              value: _smsNotifications,
+                              onChanged: (v) =>
+                                  setState(() => _smsNotifications = v),
+                              secondary: CircleAvatar(
+                                backgroundColor: theme.dividerColor.withValues(alpha: 
+                                  0.3,
+                                ),
+                                child: Icon(
+                                  Icons.chat_bubble_outline,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                              title: Text(
+                                _language == 'en'
+                                    ? 'SMS Notifications'
+                                    : _language == 'si'
+                                    ? 'SMS දැනුම්දීම්'
+                                    : 'SMS அறிவிப்புகள்',
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      title: Text(
-                        _deleteAccountLabel(),
-                        style: const TextStyle(color: Color(0xFFE74C3C)),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Support and legal
+                    Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      subtitle: Text(
-                        _language == 'en'
-                            ? 'Permanently delete your account'
-                            : _language == 'si'
-                            ? 'ඔබේ ගිණුම ස්ථිරව මකන්න'
-                            : 'உங்கள் கணக்கை நிரந்தரமாக நீக்கவும்',
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: theme.dividerColor.withValues(alpha: 0.3),
+                                  ),
+                                  child: Icon(
+                                    Icons.support_agent,
+                                    size: 18,
+                                    color: theme.colorScheme.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  _supportLabel(),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            ListTile(
+                              onTap: () => _showFeatureMessage(
+                                _language == 'en'
+                                    ? 'Help center'
+                                    : _language == 'si'
+                                    ? 'උදව් මධ්‍යස්ථානය'
+                                    : 'உதவி மையம்',
+                              ),
+                              leading: const CircleAvatar(
+                                backgroundColor: Color(0xFFE8F5E9),
+                                child: Icon(
+                                  Icons.help_outline,
+                                  color: Color(0xFF2E7D32),
+                                ),
+                              ),
+                              title: Text(
+                                _language == 'en'
+                                    ? 'Help Center'
+                                    : _language == 'si'
+                                    ? 'උදව් මධ්‍යස්ථානය'
+                                    : 'உதவி மையம்',
+                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                            ),
+                            const Divider(height: 8),
+                            ListTile(
+                              onTap: () => _showFeatureMessage(
+                                _language == 'en'
+                                    ? 'Support chat'
+                                    : _language == 'si'
+                                    ? 'සහාය කතාබහ'
+                                    : 'ஆதரவு உரையாடல்',
+                              ),
+                              leading: const CircleAvatar(
+                                backgroundColor: Color(0xFFE3F2FD),
+                                child: Icon(
+                                  Icons.chat_outlined,
+                                  color: Color(0xFF1E88E5),
+                                ),
+                              ),
+                              title: Text(
+                                _language == 'en'
+                                    ? 'Contact Support'
+                                    : _language == 'si'
+                                    ? 'සහාය අමතන්න'
+                                    : 'ஆதரவை தொடர்பு கொள்ளவும்',
+                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                            ),
+                            const Divider(height: 8),
+                            ListTile(
+                              onTap: () => _showFeatureMessage(
+                                _language == 'en'
+                                    ? 'Privacy policy'
+                                    : _language == 'si'
+                                    ? 'පෞද්ගලිකත්ව ප්‍රතිපත්තිය'
+                                    : 'தனியுரிமைக் கொள்கை',
+                              ),
+                              leading: const CircleAvatar(
+                                backgroundColor: Color(0xFFFFF3E0),
+                                child: Icon(
+                                  Icons.privacy_tip_outlined,
+                                  color: Color(0xFFEF6C00),
+                                ),
+                              ),
+                              title: Text(
+                                _language == 'en'
+                                    ? 'Privacy Policy'
+                                    : _language == 'si'
+                                    ? 'පෞද්ගලිකත්ව ප්‍රතිපත්තිය'
+                                    : 'தனியுரிமைக் கொள்கை',
+                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                            ),
+                            const Divider(height: 8),
+                            ListTile(
+                              onTap: () => _showFeatureMessage(
+                                _language == 'en'
+                                    ? 'Terms and conditions'
+                                    : _language == 'si'
+                                    ? 'නියම සහ කොන්දේසි'
+                                    : 'விதிமுறைகள் மற்றும் நிபந்தனைகள்',
+                              ),
+                              leading: const CircleAvatar(
+                                backgroundColor: Color(0xFFF3E5F5),
+                                child: Icon(
+                                  Icons.description_outlined,
+                                  color: Color(0xFF8E24AA),
+                                ),
+                              ),
+                              title: Text(
+                                _language == 'en'
+                                    ? 'Terms & Conditions'
+                                    : _language == 'si'
+                                    ? 'නියම සහ කොන්දේසි'
+                                    : 'விதிமுறைகள் மற்றும் நிபந்தனைகள்',
+                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                            ),
+                            const Divider(height: 8),
+                            ListTile(
+                              onTap: () => _showFeatureMessage(
+                                _language == 'en'
+                                    ? 'Thanks for rating us!'
+                                    : _language == 'si'
+                                    ? 'අපව ඇගයීමට ස්තූතියි!'
+                                    : 'எங்களை மதிப்பீடு செய்ததற்கு நன்றி!',
+                              ),
+                              leading: const CircleAvatar(
+                                backgroundColor: Color(0xFFFFFDE7),
+                                child: Icon(
+                                  Icons.star_outline,
+                                  color: Color(0xFFF9A825),
+                                ),
+                              ),
+                              title: Text(
+                                _language == 'en'
+                                    ? 'Rate App'
+                                    : _language == 'si'
+                                    ? 'යෙදුම ඇගයන්න'
+                                    : 'அப்பை மதிப்பிடவும்',
+                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                            ),
+                          ],
+                        ),
                       ),
-                      trailing: const Icon(Icons.chevron_right),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // About
+                    Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: theme.dividerColor.withValues(alpha: 0.3),
+                                  ),
+                                  child: Icon(
+                                    Icons.info_outline,
+                                    size: 18,
+                                    color: theme.colorScheme.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  _aboutLabel(),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Sevix Worker',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _language == 'en'
+                                  ? 'Version 1.0.0'
+                                  : _language == 'si'
+                                  ? 'අනුවාදය 1.0.0'
+                                  : 'பதிப்பு 1.0.0',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              _language == 'en'
+                                  ? '© 2025 Sevix. All rights reserved.'
+                                  : _language == 'si'
+                                  ? '© 2025 Sevix. සියලු හිමිකම් ඇවිරිණි.'
+                                  : '© 2025 Sevix. அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Account actions
+                    Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: theme.dividerColor.withValues(alpha: 0.3),
+                                  ),
+                                  child: Icon(
+                                    Icons.shield_outlined,
+                                    size: 18,
+                                    color: theme.colorScheme.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  _accountActionsLabel(),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            ListTile(
+                              onTap: widget.onLogout,
+                              leading: const CircleAvatar(
+                                backgroundColor: Color(0xFFFFF3E0),
+                                child: Icon(
+                                  Icons.logout,
+                                  color: Color(0xFFFF9800),
+                                ),
+                              ),
+                              title: Text(
+                                _logoutLabel(),
+                                style: const TextStyle(
+                                  color: Color(0xFFFF9800),
+                                ),
+                              ),
+                              subtitle: Text(
+                                _language == 'en'
+                                    ? 'Sign out of your account'
+                                    : _language == 'si'
+                                    ? 'ඔබේ ගිණුමෙන් ඉවත් වන්න'
+                                    : 'உங்கள் கணக்கிலிருந்து வெளியேறவும்',
+                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                            ),
+                            const Divider(height: 8),
+                            ListTile(
+                              onTap: _confirmDeleteAccount,
+                              leading: const CircleAvatar(
+                                backgroundColor: Color(0xFFFFEBEE),
+                                child: Icon(
+                                  Icons.delete_outline,
+                                  color: Color(0xFFE74C3C),
+                                ),
+                              ),
+                              title: Text(
+                                _deleteAccountLabel(),
+                                style: const TextStyle(
+                                  color: Color(0xFFE74C3C),
+                                ),
+                              ),
+                              subtitle: Text(
+                                _language == 'en'
+                                    ? 'Permanently delete your account'
+                                    : _language == 'si'
+                                    ? 'ඔබේ ගිණුම ස්ථිරව මකන්න'
+                                    : 'உங்கள் கணக்கை நிரந்தரமாக நீக்கவும்',
+                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -1109,3 +1681,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 }
+

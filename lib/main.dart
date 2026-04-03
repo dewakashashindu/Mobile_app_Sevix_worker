@@ -443,91 +443,79 @@ class _RootScreenState extends State<_RootScreen> {
                         Text(
                           _userName,
                           style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
                             color: textPrimary,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           _workerType,
-                          style: TextStyle(fontSize: 13, color: textSecondary),
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: textSecondary,
+                          ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              setState(() {
-                                _isOnline = true;
-                              });
-                            },
-                            icon: Icon(
-                              Icons.toggle_on,
-                              color: _isOnline
-                                  ? const Color(0xFF10B981)
-                                  : textSecondary,
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(
-                                color: _isOnline
-                                    ? const Color(0xFF10B981)
-                                    : theme.dividerColor,
-                              ),
-                              backgroundColor: _isOnline
-                                  ? const Color(0xFF10B981).withOpacity(0.08)
-                                  : null,
-                            ),
-                            label: Text(
-                              'Online',
-                              style: TextStyle(
-                                color: _isOnline
-                                    ? const Color(0xFF10B981)
-                                    : textSecondary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
+                    SizedBox(
+                      width: double.infinity,
+                      child: SegmentedButton<bool>(
+                        segments: const [
+                          ButtonSegment<bool>(
+                            value: true,
+                            icon: Icon(Icons.wifi_tethering_rounded),
+                            label: Text('Online'),
+                          ),
+                          ButtonSegment<bool>(
+                            value: false,
+                            icon: Icon(Icons.pause_circle_outline),
+                            label: Text('Offline'),
+                          ),
+                        ],
+                        selected: {_isOnline},
+                        showSelectedIcon: false,
+                        style: ButtonStyle(
+                          side: WidgetStateProperty.resolveWith((states) {
+                            final selected = states.contains(
+                              WidgetState.selected,
+                            );
+                            return BorderSide(
+                              color: selected
+                                  ? const Color(0xFF0B1533)
+                                  : theme.dividerColor,
+                              width: selected ? 1.6 : 1.0,
+                            );
+                          }),
+                          foregroundColor: WidgetStateProperty.resolveWith((
+                            states,
+                          ) {
+                            return states.contains(WidgetState.selected)
+                                ? const Color(0xFF0B1533)
+                                : textSecondary;
+                          }),
+                          backgroundColor: WidgetStateProperty.resolveWith((
+                            states,
+                          ) {
+                            return states.contains(WidgetState.selected)
+                                ? const Color(0xFFEAF0FF)
+                                : Colors.white;
+                          }),
+                          textStyle: const WidgetStatePropertyAll(
+                            TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          padding: const WidgetStatePropertyAll(
+                            EdgeInsets.symmetric(vertical: 12),
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              setState(() {
-                                _isOnline = false;
-                              });
-                            },
-                            icon: Icon(
-                              Icons.toggle_off,
-                              color: !_isOnline
-                                  ? const Color(0xFFEF4444)
-                                  : textSecondary,
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(
-                                color: !_isOnline
-                                    ? const Color(0xFFEF4444)
-                                    : theme.dividerColor,
-                              ),
-                              backgroundColor: !_isOnline
-                                  ? const Color(0xFFEF4444).withOpacity(0.08)
-                                  : null,
-                            ),
-                            label: Text(
-                              'Offline',
-                              style: TextStyle(
-                                color: !_isOnline
-                                    ? const Color(0xFFEF4444)
-                                    : textSecondary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                        onSelectionChanged: (selection) {
+                          setState(() {
+                            _isOnline = selection.first;
+                          });
+                        },
+                      ),
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
@@ -558,6 +546,12 @@ class _RootScreenState extends State<_RootScreen> {
                       child: OutlinedButton.icon(
                         onPressed: _openBidStatus,
                         style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF0B1533),
+                          side: const BorderSide(
+                            color: Color(0xFF0B1533),
+                            width: 1.6,
+                          ),
+                          backgroundColor: const Color(0xFFF5F7FF),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
@@ -742,77 +736,6 @@ class _RootScreenState extends State<_RootScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Earnings Overview',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 12,
-                          children: [
-                            _earningTile(
-                              'Today',
-                              _earnings.today,
-                              theme.colorScheme.primary,
-                            ),
-                            _earningTile(
-                              'This Week',
-                              _earnings.week,
-                              textPrimary,
-                            ),
-                            _earningTile(
-                              'This Month',
-                              _earnings.month,
-                              textPrimary,
-                            ),
-                            _earningTile(
-                              'Pending',
-                              _earnings.pending,
-                              const Color(0xFFF59E0B),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.check_circle,
-                              color: Color(0xFF10B981),
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '${_earnings.completedJobs} jobs completed',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF10B981),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
         );
@@ -964,35 +887,6 @@ class _RootScreenState extends State<_RootScreen> {
     );
   }
 
-  Widget _earningTile(String label, int amount, Color color) {
-    return Container(
-      width: 150,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Rs. ${amount.toString()}',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _statTile({
     required String title,
     required String value,
@@ -1008,7 +902,7 @@ class _RootScreenState extends State<_RootScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: color),
+          Icon(icon, size: 24, color: color),
           const SizedBox(height: 8),
           Text(
             value,
