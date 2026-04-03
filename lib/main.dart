@@ -6,6 +6,8 @@ import 'signup_screen.dart';
 import 'otp_screen.dart';
 import 'settings_screen.dart';
 import 'job_feed_screen.dart';
+import 'worker_job.dart';
+import 'bid_status_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -83,7 +85,7 @@ class _RootScreenState extends State<_RootScreen> {
   String _pendingPhoneNumber = '';
 
   _TabType _activeTab = _TabType.home;
-  bool _isOnline = false;
+  bool _isOnline = true;
 
   String _userName = 'Worker';
   String _workerType = 'Plumber';
@@ -153,47 +155,6 @@ class _RootScreenState extends State<_RootScreen> {
     }
   }
 
-  IconData _serviceIcon(String serviceType) {
-    switch (serviceType.toLowerCase()) {
-      case 'plumbing':
-        return Icons.water_damage_outlined;
-      case 'electrical':
-        return Icons.bolt_outlined;
-      case 'carpentry':
-        return Icons.handyman_outlined;
-      default:
-        return Icons.work_outline;
-    }
-  }
-
-  Color _urgencyColor(String urgency) {
-    switch (urgency) {
-      case 'high':
-        return const Color(0xFFEF4444);
-      case 'medium':
-        return const Color(0xFFF59E0B);
-      case 'low':
-        return const Color(0xFF10B981);
-      default:
-        return const Color(0xFF6B7280);
-    }
-  }
-
-  void _handleAcceptJob(String id) {
-    setState(() {
-      _jobRequests.removeWhere((j) => j.id == id);
-    });
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Job accepted!')));
-  }
-
-  void _handleRejectJob(String id) {
-    setState(() {
-      _jobRequests.removeWhere((j) => j.id == id);
-    });
-  }
-
   double _parseDistanceKm(String input) {
     final cleaned = input.toLowerCase().replaceAll('km', '').trim();
     return double.tryParse(cleaned) ?? 0;
@@ -231,6 +192,29 @@ class _RootScreenState extends State<_RootScreen> {
   void _openJobFeed() {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => JobFeedScreen(jobs: _toWorkerJobs())),
+    );
+  }
+
+  void _openBidStatus() {
+    final jobs = _toWorkerJobs();
+    if (jobs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No jobs available for bid status yet.')),
+      );
+      return;
+    }
+
+    final source = jobs.first;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => BidStatusScreen(
+          job: source,
+          bidAmount: source.budgetLkr,
+          eta: source.estimatedTime,
+          note: '',
+          status: 'Pending',
+        ),
+      ),
     );
   }
 
@@ -313,80 +297,124 @@ class _RootScreenState extends State<_RootScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 22,
-                  vertical: 24,
-                ),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF0B1533),
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(40),
-                    bottomRight: Radius.circular(40),
+                margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color(0xFF07122D),
+                      Color(0xFF0B1533),
+                      Color(0xFF173775),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF0B1533).withOpacity(0.28),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Stack(
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Positioned(
+                      right: -24,
+                      top: -24,
+                      child: Container(
+                        width: 110,
+                        height: 110,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.07),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: -16,
+                      bottom: -34,
+                      child: Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.05),
+                        ),
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              '${_greeting()} $_userName!',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${_greeting()} $_userName!',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.1,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Welcome to Sevix Worker',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.82),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 6),
-                            Text(
-                              'Welcome to Sevix Worker',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.8),
-                                fontSize: 14,
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.notifications_outlined,
+                                  color: Colors.white,
+                                ),
+                                onPressed: () {},
                               ),
                             ),
                           ],
                         ),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.notifications_outlined,
-                            color: Colors.white,
-                          ),
-                          onPressed: () {},
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Go online to find a job',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
+                        const SizedBox(height: 16),
                         Text(
-                          _isOnline ? "You're online" : "You're offline",
+                          'Jobs are matched based on your profile and service area',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withOpacity(0.92),
+                            fontSize: 13,
+                            height: 1.3,
                           ),
                         ),
-                        Switch(
-                          value: _isOnline,
-                          activeColor: Colors.greenAccent,
-                          onChanged: (v) {
-                            setState(() {
-                              _isOnline = v;
-                            });
-                          },
+                        const SizedBox(height: 14),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _headerChip(
+                              icon: Icons.work_outline,
+                              label: '${_jobRequests.length} new jobs',
+                            ),
+                            _headerChip(
+                              icon: Icons.history_toggle_off,
+                              label: '$_activeJobsCount active',
+                            ),
+                            _headerChip(
+                              icon: Icons.location_on_outlined,
+                              label: '$_serviceRadius km radius',
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -396,20 +424,21 @@ class _RootScreenState extends State<_RootScreen> {
               const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     CircleAvatar(
-                      radius: 32,
+                      radius: 42,
                       backgroundColor: theme.dividerColor,
                       child: Icon(
                         Icons.person,
-                        size: 36,
+                        size: 46,
                         color: theme.colorScheme.primary,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(height: 10),
                     Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
                           _userName,
@@ -425,6 +454,121 @@ class _RootScreenState extends State<_RootScreen> {
                           style: TextStyle(fontSize: 13, color: textSecondary),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                _isOnline = true;
+                              });
+                            },
+                            icon: Icon(
+                              Icons.toggle_on,
+                              color: _isOnline
+                                  ? const Color(0xFF10B981)
+                                  : textSecondary,
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color: _isOnline
+                                    ? const Color(0xFF10B981)
+                                    : theme.dividerColor,
+                              ),
+                              backgroundColor: _isOnline
+                                  ? const Color(0xFF10B981).withOpacity(0.08)
+                                  : null,
+                            ),
+                            label: Text(
+                              'Online',
+                              style: TextStyle(
+                                color: _isOnline
+                                    ? const Color(0xFF10B981)
+                                    : textSecondary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                _isOnline = false;
+                              });
+                            },
+                            icon: Icon(
+                              Icons.toggle_off,
+                              color: !_isOnline
+                                  ? const Color(0xFFEF4444)
+                                  : textSecondary,
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color: !_isOnline
+                                    ? const Color(0xFFEF4444)
+                                    : theme.dividerColor,
+                              ),
+                              backgroundColor: !_isOnline
+                                  ? const Color(0xFFEF4444).withOpacity(0.08)
+                                  : null,
+                            ),
+                            label: Text(
+                              'Offline',
+                              style: TextStyle(
+                                color: !_isOnline
+                                    ? const Color(0xFFEF4444)
+                                    : textSecondary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _openJobFeed,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0B1533),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: const Icon(Icons.gavel_rounded),
+                        label: const Text(
+                          'Start Bidding',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _openBidStatus,
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: const Icon(Icons.assignment_turned_in_outlined),
+                        label: const Text(
+                          'Bid Status',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -669,253 +813,6 @@ class _RootScreenState extends State<_RootScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  'Available Jobs',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: textPrimary,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              if (!_isOnline)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 16),
-                      Icon(
-                        Icons.nightlight_round,
-                        size: 48,
-                        color: textSecondary,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "You're offline",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Go online to start receiving job requests',
-                        style: TextStyle(color: textSecondary),
-                      ),
-                    ],
-                  ),
-                )
-              else if (_jobRequests.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 16),
-                      Icon(Icons.access_time, size: 48, color: textSecondary),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Waiting for job requests...',
-                        style: TextStyle(color: textSecondary),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                Column(
-                  children: _jobRequests
-                      .map(
-                        (job) => Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 6,
-                          ),
-                          child: Card(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            elevation: 2,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(16),
-                              onTap: _openJobFeed,
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          width: 44,
-                                          height: 44,
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                            color: theme
-                                                .colorScheme
-                                                .primaryContainer,
-                                          ),
-                                          child: Icon(
-                                            _serviceIcon(job.serviceType),
-                                            color: theme.colorScheme.primary,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                job.serviceType,
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w700,
-                                                  color:
-                                                      theme.colorScheme.primary,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 2),
-                                              Text(
-                                                job.customerName,
-                                                style: TextStyle(
-                                                  fontSize: 14,
-                                                  color: textSecondary,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 10,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: _urgencyColor(
-                                              job.urgency,
-                                            ).withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            job.urgency.toUpperCase(),
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w700,
-                                              color: _urgencyColor(job.urgency),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.location_on_outlined,
-                                          size: 16,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Expanded(
-                                          child: Text(
-                                            job.location,
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: textSecondary,
-                                            ),
-                                          ),
-                                        ),
-                                        Text(
-                                          '(${job.distance})',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: textSecondary,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.access_time, size: 16),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          job.estimatedTime,
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: textSecondary,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.attach_money,
-                                          size: 16,
-                                          color: Color(0xFF10B981),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          job.payment,
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            color: Color(0xFF10B981),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: OutlinedButton.icon(
-                                            onPressed: () =>
-                                                _handleRejectJob(job.id),
-                                            icon: const Icon(
-                                              Icons.close,
-                                              color: Color(0xFFEF4444),
-                                            ),
-                                            label: const Text(
-                                              'Reject',
-                                              style: TextStyle(
-                                                color: Color(0xFFEF4444),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: ElevatedButton.icon(
-                                            onPressed: () =>
-                                                _handleAcceptJob(job.id),
-                                            icon: const Icon(
-                                              Icons.check_circle,
-                                              color: Colors.white,
-                                            ),
-                                            label: const Text('Accept Job'),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
             ],
           ),
         );
@@ -943,14 +840,12 @@ class _RootScreenState extends State<_RootScreen> {
             setState(() {
               _authScreen = _AuthScreen.login;
               _activeTab = _TabType.home;
-              _isOnline = false;
             });
           },
           onDeleteAccount: () {
             setState(() {
               _authScreen = _AuthScreen.login;
               _activeTab = _TabType.home;
-              _isOnline = false;
             });
           },
           onOpenProfile: () {
@@ -1185,6 +1080,32 @@ class _RootScreenState extends State<_RootScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _headerChip({required IconData icon, required String label}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.13),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withOpacity(0.18)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: Colors.white),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
