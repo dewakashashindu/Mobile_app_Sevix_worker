@@ -145,8 +145,9 @@ class _LanguageSelectScreenState extends State<LanguageSelectScreen> {
                                   Text(
                                     'ඔබගේ භාෂාව තෝරන්න • உங்கள் மொழியைத் தேர்ந்தெடுக்கவும்',
                                     style: TextStyle(
-                                      fontSize: 13,
-                                      color: Color.fromARGB(204, 255, 255, 255),
+                                      fontSize: 15,
+                                      color: Color.fromARGB(235, 255, 255, 255),
+                                      fontWeight: FontWeight.w500,
                                     ),
                                     textAlign: TextAlign.center,
                                   ),
@@ -321,8 +322,10 @@ class _LanguageCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(999),
             color: const Color.fromARGB(242, 225, 238, 252),
             border: Border.all(
-              color: Colors.white.withOpacity(isSelected ? 1.0 : 0.9),
-              width: isSelected ? 1.5 : 1.0,
+              color: isSelected
+                  ? const Color(0xFF5EC6FF)
+                  : Colors.white.withOpacity(0.9),
+              width: isSelected ? 2.4 : 1.0,
             ),
             boxShadow: [
               BoxShadow(
@@ -330,6 +333,13 @@ class _LanguageCard extends StatelessWidget {
                 offset: const Offset(0, 4),
                 blurRadius: isSelected ? 16 : 10,
               ),
+              if (isSelected)
+                const BoxShadow(
+                  color: Color.fromARGB(120, 94, 198, 255),
+                  offset: Offset(0, 0),
+                  blurRadius: 18,
+                  spreadRadius: 1,
+                ),
             ],
           ),
           padding: const EdgeInsets.all(3),
@@ -393,8 +403,8 @@ class _LanguageCard extends StatelessWidget {
                                 width: 2,
                               ),
                             ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                            child: Stack(
+                              alignment: Alignment.center,
                               children: [
                                 Icon(
                                   language.icon,
@@ -403,14 +413,26 @@ class _LanguageCard extends StatelessWidget {
                                       ? const Color(0xFF20324A)
                                       : const Color(0xFF355C8A),
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  language.code.toUpperCase(),
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.6,
-                                    color: Color(0xFF4a5b73),
+                                Positioned(
+                                  bottom: 6,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 1,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.82),
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Text(
+                                      language.code.toUpperCase(),
+                                      style: const TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.6,
+                                        color: Color(0xFF355C8A),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -499,13 +521,15 @@ class _ContinueButton extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(999),
         color: enabled
-            ? const Color.fromARGB(242, 225, 238, 252)
+            ? const Color(0xFF0EA5E9)
             : const Color.fromARGB(230, 233, 244, 255),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(enabled ? 0.18 : 0.15),
+            color: enabled
+                ? const Color.fromARGB(130, 14, 165, 233)
+                : Colors.black.withOpacity(0.15),
             offset: const Offset(0, 6),
-            blurRadius: enabled ? 14 : 8,
+            blurRadius: enabled ? 20 : 8,
           ),
         ],
       ),
@@ -515,7 +539,7 @@ class _ContinueButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(999),
           gradient: enabled
               ? const LinearGradient(
-                  colors: [Color(0xFFE7F4FF), Color(0xFFCFE2FB)],
+                  colors: [Color(0xFF06B6D4), Color(0xFF2563EB)],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 )
@@ -526,10 +550,10 @@ class _ContinueButton extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
             color: enabled
-                ? Colors.white.withOpacity(0.45)
+                ? Colors.white.withOpacity(0.08)
                 : Colors.transparent,
             border: Border.all(
-              color: Colors.white.withOpacity(enabled ? 0.8 : 0.0),
+              color: Colors.white.withOpacity(enabled ? 0.45 : 0.0),
               width: enabled ? 0.5 : 0.0,
             ),
           ),
@@ -552,7 +576,7 @@ class _ContinueButton extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1,
                   color: enabled
-                      ? const Color(0xFF20324A)
+                      ? Colors.white
                       : const Color.fromARGB(153, 32, 50, 74),
                 ),
               ),
@@ -563,16 +587,16 @@ class _ContinueButton extends StatelessWidget {
                   height: 36,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(18),
-                    color: const Color.fromARGB(204, 255, 255, 255),
+                    color: const Color.fromARGB(230, 255, 255, 255),
                     border: Border.all(
-                      color: const Color(0xFFC9DAEE),
+                      color: const Color(0xFFDDE7FF),
                       width: 1.5,
                     ),
                   ),
                   child: const Icon(
                     Icons.arrow_forward,
                     size: 22,
-                    color: Color(0xFF355C8A),
+                    color: Color(0xFF2563EB),
                   ),
                 ),
             ],

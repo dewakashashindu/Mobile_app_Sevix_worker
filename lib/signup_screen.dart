@@ -3,9 +3,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'worker_profile_data.dart';
+
 class SignupScreen extends StatefulWidget {
   final String selectedLanguage; // 'en', 'si', 'ta'
-  final VoidCallback onSignUpSuccess;
+  final ValueChanged<WorkerProfileData> onSignUpSuccess;
   final VoidCallback? onNavigateToLogin;
 
   const SignupScreen({
@@ -391,7 +393,24 @@ class _SignupScreenState extends State<SignupScreen> {
     }
 
     _showMessage('Success', 'Signup successful!');
-    widget.onSignUpSuccess();
+    widget.onSignUpSuccess(
+      WorkerProfileData(
+        fullName: name,
+        profilePhotoPath: '',
+        email: email,
+        countryCode: _countryCode,
+        telephone: tel,
+        dateOfBirth: dob,
+        address: address,
+        city: city,
+        nationalId: nid,
+        workerTypes: _workerTypes.toList(),
+        experienceYears: experience,
+        bio: bio,
+        serviceRadiusKm: _serviceRadius,
+        nicPhotoPath: _nicPhotoPath ?? '',
+      ),
+    );
   }
 
   @override

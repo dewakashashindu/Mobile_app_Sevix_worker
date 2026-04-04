@@ -1,23 +1,33 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+
+import 'edit_profile_screen.dart';
+import 'worker_profile_data.dart';
 
 class SettingsScreen extends StatefulWidget {
   final VoidCallback onBack;
   final String selectedLanguage; // 'en', 'si', 'ta'
   final ValueChanged<String> onLanguageChange;
+  final bool isDarkMode;
+  final ValueChanged<bool> onThemeToggle;
   final VoidCallback onLogout;
   final VoidCallback onDeleteAccount;
-  final VoidCallback onOpenProfile;
-  final VoidCallback onEditProfile;
+  final WorkerProfileData profileData;
+  final ValueChanged<WorkerProfileData> onProfileUpdated;
 
   const SettingsScreen({
     super.key,
     required this.onBack,
     required this.selectedLanguage,
     required this.onLanguageChange,
+    required this.isDarkMode,
+    required this.onThemeToggle,
     required this.onLogout,
     required this.onDeleteAccount,
-    required this.onOpenProfile,
-    required this.onEditProfile,
+    required this.profileData,
+    required this.onProfileUpdated,
   });
 
   @override
@@ -25,48 +35,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  // Edit info state
-  String _userName = 'Worker';
-  String _userEmail = 'worker@example.com';
-  String _userPhone = '+94 77 123 4567';
-
-  // Password state
-  final TextEditingController _currentPasswordController =
-      TextEditingController();
-  final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
-
-  // Edit info controllers
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
-
-  // Notification settings
-  bool _emailNotifications = true;
-  bool _pushNotifications = true;
-  bool _smsNotifications = false;
-
-  // Work preferences
-  bool _availableForJobs = true;
-  bool _autoAcceptNearby = false;
-  double _maxTravelDistance = 12;
-
-  // App experience settings
-  bool _darkModePreview = false;
-  bool _biometricLock = false;
-  bool _dataSaverMode = false;
-
-  @override
-  void dispose() {
-    _currentPasswordController.dispose();
-    _newPasswordController.dispose();
-    _confirmPasswordController.dispose();
-    _nameController.dispose();
-    _emailController.dispose();
-    _phoneController.dispose();
-    super.dispose();
-  }
+  final ImagePicker _picker = ImagePicker();
 
   String get _language => widget.selectedLanguage;
 
@@ -85,94 +54,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       case 'en':
       default:
         return 'Settings';
-    }
-  }
-
-  String _accountLabel() {
-    switch (_language) {
-      case 'si':
-        return 'ගිණුම';
-      case 'ta':
-        return 'கணக்கு';
-      default:
-        return 'Account';
-    }
-  }
-
-  String _preferencesLabel() {
-    switch (_language) {
-      case 'si':
-        return 'මනාපයන්';
-      case 'ta':
-        return 'விருப்பத்தேர்வுகள்';
-      default:
-        return 'Preferences';
-    }
-  }
-
-  String _aboutLabel() {
-    switch (_language) {
-      case 'si':
-        return 'පිළිබඳව';
-      case 'ta':
-        return 'பற்றி';
-      default:
-        return 'About';
-    }
-  }
-
-  String _accountActionsLabel() {
-    switch (_language) {
-      case 'si':
-        return 'ගිණුම් ක්‍රියා';
-      case 'ta':
-        return 'கணக்கு செயல்கள்';
-      default:
-        return 'Account Actions';
-    }
-  }
-
-  String _notificationsLabel() {
-    switch (_language) {
-      case 'si':
-        return 'දැනුම්දීම්';
-      case 'ta':
-        return 'அறிவிப்புகள்';
-      default:
-        return 'Notifications';
-    }
-  }
-
-  String _workPreferencesLabel() {
-    switch (_language) {
-      case 'si':
-        return 'රැකියා මනාපයන්';
-      case 'ta':
-        return 'வேலை விருப்பங்கள்';
-      default:
-        return 'Work Preferences';
-    }
-  }
-
-  String _appExperienceLabel() {
-    switch (_language) {
-      case 'si':
-        return 'යෙදුම් අත්දැකීම';
-      case 'ta':
-        return 'அப் அனுபவம்';
-      default:
-        return 'App Experience';
-    }
-  }
-
-  String _supportLabel() {
-    switch (_language) {
-      case 'si':
-        return 'සහාය සහ නීති';
-      case 'ta':
-        return 'ஆதரவு மற்றும் சட்டம்';
-      default:
-        return 'Support & Legal';
     }
   }
 
@@ -201,22 +82,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _deleteAccountLabel() {
     switch (_language) {
       case 'si':
-        return 'ගිණුම මකන්න';
+        return 'ගිණුම අක්‍රීය කරන්න';
       case 'ta':
-        return 'கணக்கை நீக்கு';
+        return 'கணக்கை முடக்கு';
       default:
-        return 'Delete Account';
-    }
-  }
-
-  String _saveLabel() {
-    switch (_language) {
-      case 'si':
-        return 'සුරකින්න';
-      case 'ta':
-        return 'சேமிக்கவும்';
-      default:
-        return 'Save';
+        return 'Deactivate Account';
     }
   }
 
@@ -327,264 +197,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _openEditInfoSheet() {
-    _nameController.text = _userName;
-    _emailController.text = _userEmail;
-    _phoneController.text = _userPhone;
-
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+  void _openEditProfileScreen() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => EditProfileScreen(
+          selectedLanguage: _language,
+          initialData: widget.profileData,
+          onSave: (updatedData) {
+            widget.onProfileUpdated(updatedData);
+            _showSnack(
+              _language == 'en'
+                  ? 'Profile updated successfully!'
+                  : _language == 'si'
+                  ? 'පැතිකඩ සාර්ථකව යාවත්කාලීන කරන ලදී!'
+                  : 'சுயவிவரம் வெற்றிகரமாக புதுப்பிக்கப்பட்டது!',
+            );
+          },
+        ),
       ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: EdgeInsets.only(
-              left: 20,
-              right: 20,
-              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-              top: 16,
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        _language == 'en'
-                            ? 'Edit Information'
-                            : _language == 'si'
-                            ? 'තොරතුරු සංස්කරණය'
-                            : 'தகவலைத் திருத்து',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  _inputGroup(
-                    label: _language == 'en'
-                        ? 'Name'
-                        : _language == 'si'
-                        ? 'නම'
-                        : 'பெயர்',
-                    controller: _nameController,
-                    hint: _language == 'en'
-                        ? 'Enter your name'
-                        : _language == 'si'
-                        ? 'ඔබගේ නම ඇතුළත් කරන්න'
-                        : 'உங்கள் பெயரை உள்ளிடவும்',
-                  ),
-                  _inputGroup(
-                    label: _language == 'en'
-                        ? 'Email'
-                        : _language == 'si'
-                        ? 'විද්‍යුත් තැපෑල'
-                        : 'மின்னஞ்சல்',
-                    controller: _emailController,
-                    hint: _language == 'en'
-                        ? 'Enter your email'
-                        : _language == 'si'
-                        ? 'ඔබගේ විද්‍යුත් තැපෑල ඇතුළත් කරන්න'
-                        : 'உங்கள் மின்னஞ்சலை உள்ளிடவும்',
-                    keyboardType: TextInputType.emailAddress,
-                  ),
-                  _inputGroup(
-                    label: _language == 'en'
-                        ? 'Phone'
-                        : _language == 'si'
-                        ? 'දුරකථනය'
-                        : 'தொலைபேசி',
-                    controller: _phoneController,
-                    hint: _language == 'en'
-                        ? 'Enter your phone'
-                        : _language == 'si'
-                        ? 'ඔබගේ දුරකථනය ඇතුළත් කරන්න'
-                        : 'உங்கள் தொலைபேசியை உள்ளிடவும்',
-                    keyboardType: TextInputType.phone,
-                  ),
-                  const SizedBox(height: 8),
-                  _primaryButton(
-                    label: _saveLabel(),
-                    onPressed: () {
-                      setState(() {
-                        _userName = _nameController.text.trim();
-                        _userEmail = _emailController.text.trim();
-                        _userPhone = _phoneController.text.trim();
-                      });
-
-                      widget.onEditProfile();
-
-                      Navigator.of(context).pop();
-                      _showSnack(
-                        _language == 'en'
-                            ? 'Information updated successfully!'
-                            : _language == 'si'
-                            ? 'තොරතුරු සාර්ථකව යාවත්කාලීන කරන ලදී!'
-                            : 'தகவல் வெற்றிகரமாக புதுப்பிக்கப்பட்டது!',
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _openResetPasswordSheet() {
-    _currentPasswordController.clear();
-    _newPasswordController.clear();
-    _confirmPasswordController.clear();
-
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: EdgeInsets.only(
-              left: 20,
-              right: 20,
-              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-              top: 16,
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        _language == 'en'
-                            ? 'Reset Password'
-                            : _language == 'si'
-                            ? 'මුරපදය නැවත සකසන්න'
-                            : 'கடவுச்சொல்லை மீட்டமை',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  _inputGroup(
-                    label: _language == 'en'
-                        ? 'Current Password'
-                        : _language == 'si'
-                        ? 'වත්මන් මුරපදය'
-                        : 'தற்போதைய கடவுச்சொல்',
-                    controller: _currentPasswordController,
-                    hint: _language == 'en'
-                        ? 'Enter current password'
-                        : _language == 'si'
-                        ? 'වත්මන් මුරපදය ඇතුළත් කරන්න'
-                        : 'தற்போதைய கடவுச்சொல்லை உள்ளிடவும்',
-                    obscureText: true,
-                  ),
-                  _inputGroup(
-                    label: _language == 'en'
-                        ? 'New Password'
-                        : _language == 'si'
-                        ? 'නව මුරපදය'
-                        : 'புதிய கடவுச்சொல்',
-                    controller: _newPasswordController,
-                    hint: _language == 'en'
-                        ? 'Enter new password'
-                        : _language == 'si'
-                        ? 'නව මුරපදය ඇතුළත් කරන්න'
-                        : 'புதிய கடவுச்சொல்லை உள்ளிடவும்',
-                    obscureText: true,
-                  ),
-                  _inputGroup(
-                    label: _language == 'en'
-                        ? 'Confirm Password'
-                        : _language == 'si'
-                        ? 'මුරපදය තහවුරු කරන්න'
-                        : 'கடவுச்சொல்லை உறுதிப்படுத்தவும்',
-                    controller: _confirmPasswordController,
-                    hint: _language == 'en'
-                        ? 'Confirm new password'
-                        : _language == 'si'
-                        ? 'නව මුරපදය තහවුරු කරන්න'
-                        : 'புதிய கடவுச்சொல்லை உறுதிப்படுத்தவும்',
-                    obscureText: true,
-                  ),
-                  const SizedBox(height: 8),
-                  _primaryButton(
-                    label: _language == 'en'
-                        ? 'Reset Password'
-                        : _language == 'si'
-                        ? 'මුරපදය නැවත සකසන්න'
-                        : 'கடவுச்சொல்லை மீட்டமை',
-                    onPressed: _handleResetPassword,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _handleResetPassword() {
-    final current = _currentPasswordController.text.trim();
-    final newPass = _newPasswordController.text.trim();
-    final confirm = _confirmPasswordController.text.trim();
-
-    if (current.isEmpty || newPass.isEmpty || confirm.isEmpty) {
-      _showSnack(
-        _language == 'en'
-            ? 'Please fill all fields'
-            : _language == 'si'
-            ? 'කරුණාකර සියලු ක්ෂේත්‍ර පුරවන්න'
-            : 'அனைத்து புலங்களையும் நிரப்பவும்',
-      );
-      return;
-    }
-
-    if (newPass != confirm) {
-      _showSnack(
-        _language == 'en'
-            ? 'Passwords do not match'
-            : _language == 'si'
-            ? 'මුරපද ගැලපෙන්නේ නැත'
-            : 'கடவுச்சொற்கள் பொருந்தவில்லை',
-      );
-      return;
-    }
-
-    Navigator.of(context).pop();
-    _showSnack(
-      _language == 'en'
-          ? 'Password reset successfully!'
-          : _language == 'si'
-          ? 'මුරපදය සාර්ථකව නැවත සකසන ලදී!'
-          : 'கடவுச்சொல் வெற்றிகரமாக மீட்டமைக்கப்பட்டது!',
     );
   }
 
@@ -598,17 +228,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           title: Text(
             _language == 'en'
-                ? 'Delete Account?'
+                ? 'Deactivate Account?'
                 : _language == 'si'
-                ? 'ගිණුම මකන්නද?'
-                : 'கணக்கை நீக்கவா?',
+                ? 'ගිණුම අක්‍රීය කරන්නද?'
+                : 'கணக்கை முடக்கவா?',
           ),
           content: Text(
             _language == 'en'
-                ? 'This action cannot be undone. All your data will be permanently deleted.'
+                ? 'Your account will be deactivated and hidden until support reactivates it.'
                 : _language == 'si'
-                ? 'මෙම ක්‍රියාව ආපසු හැරවිය නොහැක. ඔබගේ සියලු දත්ත ස්ථිරව මකා දමනු ලැබේ.'
-                : 'இந்த செயலை மாற்ற முடியாது. உங்கள் அனைத்து தரவும் நிரந்தரமாக நீக்கப்படும்.',
+                ? 'ඔබගේ ගිණුම අක්‍රීය කර සැඟවෙනු ඇත. නැවත සක්‍රීය කිරීමට සහාය අවශ්‍ය වේ.'
+                : 'உங்கள் கணக்கு முடக்கப்படும். மீண்டும் செயல்படுத்த ஆதரவை தொடர்புகொள்ள வேண்டும்.',
           ),
           actions: [
             TextButton(
@@ -625,10 +255,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: Text(
                 _language == 'en'
-                    ? 'Yes, Delete My Account'
+                    ? 'Yes, Deactivate My Account'
                     : _language == 'si'
-                    ? 'ඔව්, මගේ ගිණුම මකන්න'
-                    : 'ஆம், என் கணக்கை நீக்கு',
+                    ? 'ඔව්, මගේ ගිණුම අක්‍රීය කරන්න'
+                    : 'ஆம், என் கணக்கை முடக்கு',
               ),
             ),
           ],
@@ -647,78 +277,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _inputGroup({
-    required String label,
-    required TextEditingController controller,
-    required String hint,
-    TextInputType? keyboardType,
-    bool obscureText = false,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: controller,
-            keyboardType: keyboardType,
-            obscureText: obscureText,
-            decoration: InputDecoration(
-              hintText: hint,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFE0E3EB)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF0B1533)),
-              ),
-              filled: true,
-              fillColor: const Color(0xFFF8F9FA),
-            ),
-          ),
-        ],
-      ),
+  Future<void> _changeProfilePhotoFromCamera() async {
+    final result = await _picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 80,
+      maxWidth: 1200,
     );
-  }
 
-  Widget _primaryButton({
-    required String label,
-    required VoidCallback onPressed,
-  }) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF0B1533),
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          elevation: 6,
-        ),
-        onPressed: onPressed,
-        child: Text(
-          label,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-        ),
-      ),
+    if (result == null) {
+      return;
+    }
+
+    widget.onProfileUpdated(
+      widget.profileData.copyWith(profilePhotoPath: result.path),
+    );
+
+    if (!mounted) return;
+    _showSnack(
+      _language == 'en'
+          ? 'Profile photo updated'
+          : _language == 'si'
+          ? 'පැතිකඩ ඡායාරූපය යාවත්කාලීන කරන ලදී'
+          : 'சுயவிவர புகைப்படம் புதுப்பிக்கப்பட்டது',
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       backgroundColor: const Color(0xFFF3F6FC),
       appBar: AppBar(
@@ -728,940 +313,282 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         title: Text(_settingsTitle()),
       ),
-      body: Column(
-        children: [
-          Container(
-            margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+        child: Column(
+          children: [
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 14,
                 ),
-              ],
+                child: Row(
+                  children: [
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        CircleAvatar(
+                          radius: 34,
+                          backgroundColor: const Color(0xFFE8EEF7),
+                          backgroundImage:
+                              widget.profileData.profilePhotoPath.isEmpty
+                              ? null
+                              : FileImage(
+                                  File(widget.profileData.profilePhotoPath),
+                                ),
+                          child: widget.profileData.profilePhotoPath.isEmpty
+                              ? const Icon(
+                                  Icons.person,
+                                  size: 34,
+                                  color: Color(0xFF0B1533),
+                                )
+                              : null,
+                        ),
+                        Positioned(
+                          right: -2,
+                          bottom: -2,
+                          child: Material(
+                            color: const Color(0xFF0B1533),
+                            shape: const CircleBorder(),
+                            child: InkWell(
+                              customBorder: const CircleBorder(),
+                              onTap: _changeProfilePhotoFromCamera,
+                              child: const Padding(
+                                padding: EdgeInsets.all(8),
+                                child: Icon(
+                                  Icons.camera_alt,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.profileData.fullName.isEmpty
+                                ? (_language == 'en'
+                                      ? 'Worker'
+                                      : _language == 'si'
+                                      ? 'සේවකයා'
+                                      : 'தொழிலாளர்')
+                                : widget.profileData.fullName,
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            widget.profileData.email.isEmpty
+                                ? (_language == 'en'
+                                      ? 'Tap camera to update profile photo'
+                                      : _language == 'si'
+                                      ? 'පැතිකඩ ඡායාරූපය වෙනස් කිරීමට කැමරා බොත්තම තට්ටු කරන්න'
+                                      : 'புகைப்படத்தை மாற்ற கேமரா பொத்தானை தட்டவும்')
+                                : widget.profileData.email,
+                            style: const TextStyle(
+                              color: Colors.black54,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            child: Row(
-              children: [
-                const CircleAvatar(
-                  radius: 18,
-                  backgroundColor: Color(0xFFE8EEF7),
+            const SizedBox(height: 12),
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: ListTile(
+                onTap: _openLanguageSheet,
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFFE3F2FD),
+                  child: Icon(Icons.language, color: Color(0xFF1E88E5)),
+                ),
+                title: Text(_languageLabel()),
+                subtitle: Text(
+                  _language == 'en'
+                      ? 'English / Sinhala / Tamil'
+                      : _language == 'si'
+                      ? 'ඉංග්‍රීසි / සිංහල / தமிழ்'
+                      : 'English / සිංහල / தமிழ்',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: SwitchListTile.adaptive(
+                value: widget.isDarkMode,
+                onChanged: widget.onThemeToggle,
+                secondary: const CircleAvatar(
+                  backgroundColor: Color(0xFFEDE7F6),
                   child: Icon(
-                    Icons.settings_outlined,
-                    color: Color(0xFF0B1533),
+                    Icons.dark_mode_outlined,
+                    color: Color(0xFF5E35B1),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    _language == 'en'
-                        ? 'Manage your account and preferences'
-                        : _language == 'si'
-                        ? 'ඔබගේ ගිණුම සහ මනාපයන් කළමනාකරණය කරන්න'
-                        : 'உங்கள் கணக்கு மற்றும் விருப்பங்களை நிர்வகிக்கவும்',
-                    style: const TextStyle(fontSize: 13, color: Colors.black54),
-                  ),
+                title: Text(
+                  _language == 'en'
+                      ? 'Theme'
+                      : _language == 'si'
+                      ? 'තේමාව'
+                      : 'தீம்',
                 ),
-              ],
+                subtitle: Text(
+                  widget.isDarkMode
+                      ? (_language == 'en'
+                            ? 'Dark mode'
+                            : _language == 'si'
+                            ? 'අඳුරු ආකාරය'
+                            : 'இருண்ட முறை')
+                      : (_language == 'en'
+                            ? 'Light mode'
+                            : _language == 'si'
+                            ? 'ආලෝක ආකාරය'
+                            : 'ஒளி முறை'),
+                ),
+              ),
             ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+            const SizedBox(height: 12),
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: ListTile(
+                onTap: _openEditProfileScreen,
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFFE8EEF7),
+                  child: Icon(Icons.edit_outlined, color: Color(0xFF0B1533)),
+                ),
+                title: Text(
+                  _language == 'en'
+                      ? 'Edit Profile'
+                      : _language == 'si'
+                      ? 'පැතිකඩ සංස්කරණය'
+                      : 'சுயவிவரத்தைத் திருத்து',
+                ),
+                subtitle: Text(
+                  _language == 'en'
+                      ? 'Update personal and professional details'
+                      : _language == 'si'
+                      ? 'පුද්ගලික සහ වෘත්තීය තොරතුරු යාවත්කාලීන කරන්න'
+                      : 'தனிப்பட்ட மற்றும் தொழில்முறை தகவல்களைப் புதுப்பிக்கவும்',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Column(
                 children: [
-                  // Account card
-                  Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                  ListTile(
+                    onTap: () => _showFeatureMessage(
+                      _language == 'en'
+                          ? 'Help Center'
+                          : _language == 'si'
+                          ? 'උදව් මධ්‍යස්ථානය'
+                          : 'உதவி மையம்',
                     ),
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 32,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  color: theme.dividerColor.withValues(
-                                    alpha: 0.3,
-                                  ),
-                                ),
-                                child: Icon(
-                                  Icons.person,
-                                  size: 18,
-                                  color: theme.colorScheme.onSurface,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                _accountLabel(),
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          ListTile(
-                            onTap: widget.onOpenProfile,
-                            leading: CircleAvatar(
-                              backgroundColor: theme.dividerColor.withValues(
-                                alpha: 0.3,
-                              ),
-                              child: Icon(
-                                Icons.person_outline,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                            ),
-                            title: Text(
-                              _language == 'en'
-                                  ? 'My Profile'
-                                  : _language == 'si'
-                                  ? 'මගේ පැතිකඩ'
-                                  : 'என் சுயவிவரம்',
-                            ),
-                            subtitle: Text(
-                              _language == 'en'
-                                  ? 'View your worker profile'
-                                  : _language == 'si'
-                                  ? 'ඔබගේ සේවක පැතිකඩ බලන්න'
-                                  : 'உங்கள் தொழிலாளர் சுயவிவரத்தைப் பார்க்கவும்',
-                            ),
-                            trailing: const Icon(Icons.chevron_right),
-                          ),
-                          const Divider(height: 8),
-                          ListTile(
-                            onTap: _openEditInfoSheet,
-                            leading: CircleAvatar(
-                              backgroundColor: theme.dividerColor.withValues(
-                                alpha: 0.3,
-                              ),
-                              child: Icon(
-                                Icons.edit_outlined,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                            ),
-                            title: Text(
-                              _language == 'en'
-                                  ? 'Edit Information'
-                                  : _language == 'si'
-                                  ? 'තොරතුරු සංස්කරණය'
-                                  : 'தகவலைத் திருத்து',
-                            ),
-                            subtitle: Text('$_userName, $_userEmail'),
-                            trailing: const Icon(Icons.chevron_right),
-                          ),
-                          const Divider(height: 8),
-                          ListTile(
-                            onTap: _openResetPasswordSheet,
-                            leading: const CircleAvatar(
-                              backgroundColor: Color(0xFFFFEBEE),
-                              child: Icon(
-                                Icons.lock_outline,
-                                color: Color(0xFFE74C3C),
-                              ),
-                            ),
-                            title: Text(
-                              _language == 'en'
-                                  ? 'Reset Password'
-                                  : _language == 'si'
-                                  ? 'මුරපදය නැවත සකසන්න'
-                                  : 'கடவுச்சொல்லை மீட்டமை',
-                            ),
-                            subtitle: Text(
-                              _language == 'en'
-                                  ? 'Change your password'
-                                  : _language == 'si'
-                                  ? 'ඔබගේ මුරපදය වෙනස් කරන්න'
-                                  : 'உங்கள் கடவுச்சொல்லை மாற்றவும்',
-                            ),
-                            trailing: const Icon(Icons.chevron_right),
-                          ),
-                        ],
-                      ),
+                    leading: const CircleAvatar(
+                      backgroundColor: Color(0xFFE8F5E9),
+                      child: Icon(Icons.help_outline, color: Color(0xFF2E7D32)),
                     ),
+                    title: Text(
+                      _language == 'en'
+                          ? 'Help Center'
+                          : _language == 'si'
+                          ? 'උදව් මධ්‍යස්ථානය'
+                          : 'உதவி மையம்',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
                   ),
-                  const SizedBox(height: 16),
-
-                  // Preferences
-                  Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                  const Divider(height: 1),
+                  ListTile(
+                    onTap: () => _showFeatureMessage(
+                      _language == 'en'
+                          ? 'Report Issue'
+                          : _language == 'si'
+                          ? 'දෝෂයක් වාර්තා කරන්න'
+                          : 'சிக்கலை அறிவிக்கவும்',
                     ),
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 32,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  color: theme.dividerColor.withValues(
-                                    alpha: 0.3,
-                                  ),
-                                ),
-                                child: Icon(
-                                  Icons.tune,
-                                  size: 18,
-                                  color: theme.colorScheme.onSurface,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                _preferencesLabel(),
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          ListTile(
-                            onTap: _openLanguageSheet,
-                            leading: const CircleAvatar(
-                              backgroundColor: Color(0xFFE3F2FD),
-                              child: Icon(
-                                Icons.language,
-                                color: Color(0xFF3498DB),
-                              ),
-                            ),
-                            title: Text(_languageLabel()),
-                            subtitle: Text(
-                              _language == 'en'
-                                  ? 'English'
-                                  : _language == 'si'
-                                  ? 'සිංහල'
-                                  : 'தமிழ்',
-                            ),
-                            trailing: const Icon(Icons.chevron_right),
-                          ),
-                        ],
+                    leading: const CircleAvatar(
+                      backgroundColor: Color(0xFFFFEBEE),
+                      child: Icon(
+                        Icons.bug_report_outlined,
+                        color: Color(0xFFE53935),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Work preferences
-                  Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                    title: Text(
+                      _language == 'en'
+                          ? 'Report Issue'
+                          : _language == 'si'
+                          ? 'දෝෂයක් වාර්තා කරන්න'
+                          : 'சிக்கலை அறிவிக்கவும்',
                     ),
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 32,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  color: theme.dividerColor.withValues(
-                                    alpha: 0.3,
-                                  ),
-                                ),
-                                child: Icon(
-                                  Icons.work_outline,
-                                  size: 18,
-                                  color: theme.colorScheme.onSurface,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                _workPreferencesLabel(),
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          SwitchListTile.adaptive(
-                            value: _availableForJobs,
-                            onChanged: (v) =>
-                                setState(() => _availableForJobs = v),
-                            secondary: CircleAvatar(
-                              backgroundColor: theme.dividerColor.withValues(
-                                alpha: 0.3,
-                              ),
-                              child: Icon(
-                                Icons.toggle_on_outlined,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                            ),
-                            title: Text(
-                              _language == 'en'
-                                  ? 'Available for jobs'
-                                  : _language == 'si'
-                                  ? 'රැකියා සඳහා ලබාගත හැක'
-                                  : 'வேலைகளுக்கு தயாராக உள்ளேன்',
-                            ),
-                          ),
-                          const Divider(height: 8),
-                          SwitchListTile.adaptive(
-                            value: _autoAcceptNearby,
-                            onChanged: (v) =>
-                                setState(() => _autoAcceptNearby = v),
-                            secondary: CircleAvatar(
-                              backgroundColor: theme.dividerColor.withValues(
-                                alpha: 0.3,
-                              ),
-                              child: Icon(
-                                Icons.flash_on_outlined,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                            ),
-                            title: Text(
-                              _language == 'en'
-                                  ? 'Auto-accept nearby job alerts'
-                                  : _language == 'si'
-                                  ? 'ලඟ රැකියා ඇඟවීම් ස්වයංක්‍රීයව පිළිගන්න'
-                                  : 'அருகிலுள்ள வேலை எச்சரிக்கைகளை தானாக ஏற்கவும்',
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _language == 'en'
-                                ? 'Maximum travel distance'
-                                : _language == 'si'
-                                ? 'උපරිම ගමන් දුර'
-                                : 'அதிகபட்ச பயண தூரம்',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Slider(
-                                  value: _maxTravelDistance,
-                                  min: 2,
-                                  max: 40,
-                                  divisions: 19,
-                                  label: '${_maxTravelDistance.round()} km',
-                                  onChanged: (v) =>
-                                      setState(() => _maxTravelDistance = v),
-                                ),
-                              ),
-                              Text(
-                                '${_maxTravelDistance.round()} km',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // App experience
-                  Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 32,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  color: theme.dividerColor.withValues(
-                                    alpha: 0.3,
-                                  ),
-                                ),
-                                child: Icon(
-                                  Icons.palette_outlined,
-                                  size: 18,
-                                  color: theme.colorScheme.onSurface,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                _appExperienceLabel(),
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          SwitchListTile.adaptive(
-                            value: _darkModePreview,
-                            onChanged: (v) =>
-                                setState(() => _darkModePreview = v),
-                            secondary: CircleAvatar(
-                              backgroundColor: theme.dividerColor.withValues(
-                                alpha: 0.3,
-                              ),
-                              child: Icon(
-                                Icons.dark_mode_outlined,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                            ),
-                            title: Text(
-                              _language == 'en'
-                                  ? 'Dark mode (preview)'
-                                  : _language == 'si'
-                                  ? 'අඳුරු ආකාරය (පරීක්ෂණය)'
-                                  : 'டார்க் மோடு (முன்னோட்டம்)',
-                            ),
-                          ),
-                          const Divider(height: 8),
-                          SwitchListTile.adaptive(
-                            value: _biometricLock,
-                            onChanged: (v) =>
-                                setState(() => _biometricLock = v),
-                            secondary: CircleAvatar(
-                              backgroundColor: theme.dividerColor.withValues(
-                                alpha: 0.3,
-                              ),
-                              child: Icon(
-                                Icons.fingerprint,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                            ),
-                            title: Text(
-                              _language == 'en'
-                                  ? 'Biometric app lock'
-                                  : _language == 'si'
-                                  ? 'ජෛවමිතික යෙදුම් අගුල'
-                                  : 'பயோமெட்ரிக் ஆப் பூட்டு',
-                            ),
-                          ),
-                          const Divider(height: 8),
-                          SwitchListTile.adaptive(
-                            value: _dataSaverMode,
-                            onChanged: (v) =>
-                                setState(() => _dataSaverMode = v),
-                            secondary: CircleAvatar(
-                              backgroundColor: theme.dividerColor.withValues(
-                                alpha: 0.3,
-                              ),
-                              child: Icon(
-                                Icons.data_saver_off_outlined,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                            ),
-                            title: Text(
-                              _language == 'en'
-                                  ? 'Data saver mode'
-                                  : _language == 'si'
-                                  ? 'දත්ත ඉතිරි කිරීමේ ආකාරය'
-                                  : 'டேட்டா சேவர் முறை',
-                            ),
-                          ),
-                          const Divider(height: 8),
-                          ListTile(
-                            onTap: () => _showFeatureMessage(
-                              _language == 'en'
-                                  ? 'Cache cleared'
-                                  : _language == 'si'
-                                  ? 'හැඹිලි මකා දමන ලදී'
-                                  : 'கேச் நீக்கப்பட்டது',
-                            ),
-                            leading: const CircleAvatar(
-                              backgroundColor: Color(0xFFEDE7F6),
-                              child: Icon(
-                                Icons.cleaning_services_outlined,
-                                color: Color(0xFF5E35B1),
-                              ),
-                            ),
-                            title: Text(
-                              _language == 'en'
-                                  ? 'Clear app cache'
-                                  : _language == 'si'
-                                  ? 'යෙදුම් හැඹිලිය මකා දමන්න'
-                                  : 'அப் கேச்சை அழிக்கவும்',
-                            ),
-                            trailing: const Icon(Icons.chevron_right),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Notifications
-                  Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 32,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  color: theme.dividerColor.withValues(
-                                    alpha: 0.3,
-                                  ),
-                                ),
-                                child: Icon(
-                                  Icons.notifications,
-                                  size: 18,
-                                  color: theme.colorScheme.onSurface,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                _notificationsLabel(),
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          SwitchListTile.adaptive(
-                            value: _emailNotifications,
-                            onChanged: (v) =>
-                                setState(() => _emailNotifications = v),
-                            secondary: CircleAvatar(
-                              backgroundColor: theme.dividerColor.withValues(
-                                alpha: 0.3,
-                              ),
-                              child: Icon(
-                                Icons.mail_outline,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                            ),
-                            title: Text(
-                              _language == 'en'
-                                  ? 'Email Notifications'
-                                  : _language == 'si'
-                                  ? 'විද්‍යුත් තැපැල් දැනුම්දීම්'
-                                  : 'மின்னஞ்சல் அறிவிப்புகள்',
-                            ),
-                          ),
-                          const Divider(height: 8),
-                          SwitchListTile.adaptive(
-                            value: _pushNotifications,
-                            onChanged: (v) =>
-                                setState(() => _pushNotifications = v),
-                            secondary: CircleAvatar(
-                              backgroundColor: theme.dividerColor.withValues(
-                                alpha: 0.3,
-                              ),
-                              child: Icon(
-                                Icons.phone_iphone,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                            ),
-                            title: Text(
-                              _language == 'en'
-                                  ? 'Push Notifications'
-                                  : _language == 'si'
-                                  ? 'තල්ලු දැනුම්දීම්'
-                                  : 'புஷ் அறிவிப்புகள்',
-                            ),
-                          ),
-                          const Divider(height: 8),
-                          SwitchListTile.adaptive(
-                            value: _smsNotifications,
-                            onChanged: (v) =>
-                                setState(() => _smsNotifications = v),
-                            secondary: CircleAvatar(
-                              backgroundColor: theme.dividerColor.withValues(
-                                alpha: 0.3,
-                              ),
-                              child: Icon(
-                                Icons.chat_bubble_outline,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                            ),
-                            title: Text(
-                              _language == 'en'
-                                  ? 'SMS Notifications'
-                                  : _language == 'si'
-                                  ? 'SMS දැනුම්දීම්'
-                                  : 'SMS அறிவிப்புகள்',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Support and legal
-                  Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 32,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  color: theme.dividerColor.withValues(
-                                    alpha: 0.3,
-                                  ),
-                                ),
-                                child: Icon(
-                                  Icons.support_agent,
-                                  size: 18,
-                                  color: theme.colorScheme.onSurface,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                _supportLabel(),
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          ListTile(
-                            onTap: () => _showFeatureMessage(
-                              _language == 'en'
-                                  ? 'Help center'
-                                  : _language == 'si'
-                                  ? 'උදව් මධ්‍යස්ථානය'
-                                  : 'உதவி மையம்',
-                            ),
-                            leading: const CircleAvatar(
-                              backgroundColor: Color(0xFFE8F5E9),
-                              child: Icon(
-                                Icons.help_outline,
-                                color: Color(0xFF2E7D32),
-                              ),
-                            ),
-                            title: Text(
-                              _language == 'en'
-                                  ? 'Help Center'
-                                  : _language == 'si'
-                                  ? 'උදව් මධ්‍යස්ථානය'
-                                  : 'உதவி மையம்',
-                            ),
-                            trailing: const Icon(Icons.chevron_right),
-                          ),
-                          const Divider(height: 8),
-                          ListTile(
-                            onTap: () => _showFeatureMessage(
-                              _language == 'en'
-                                  ? 'Support chat'
-                                  : _language == 'si'
-                                  ? 'සහාය කතාබහ'
-                                  : 'ஆதரவு உரையாடல்',
-                            ),
-                            leading: const CircleAvatar(
-                              backgroundColor: Color(0xFFE3F2FD),
-                              child: Icon(
-                                Icons.chat_outlined,
-                                color: Color(0xFF1E88E5),
-                              ),
-                            ),
-                            title: Text(
-                              _language == 'en'
-                                  ? 'Contact Support'
-                                  : _language == 'si'
-                                  ? 'සහාය අමතන්න'
-                                  : 'ஆதரவை தொடர்பு கொள்ளவும்',
-                            ),
-                            trailing: const Icon(Icons.chevron_right),
-                          ),
-                          const Divider(height: 8),
-                          ListTile(
-                            onTap: () => _showFeatureMessage(
-                              _language == 'en'
-                                  ? 'Privacy policy'
-                                  : _language == 'si'
-                                  ? 'පෞද්ගලිකත්ව ප්‍රතිපත්තිය'
-                                  : 'தனியுரிமைக் கொள்கை',
-                            ),
-                            leading: const CircleAvatar(
-                              backgroundColor: Color(0xFFFFF3E0),
-                              child: Icon(
-                                Icons.privacy_tip_outlined,
-                                color: Color(0xFFEF6C00),
-                              ),
-                            ),
-                            title: Text(
-                              _language == 'en'
-                                  ? 'Privacy Policy'
-                                  : _language == 'si'
-                                  ? 'පෞද්ගලිකත්ව ප්‍රතිපත්තිය'
-                                  : 'தனியுரிமைக் கொள்கை',
-                            ),
-                            trailing: const Icon(Icons.chevron_right),
-                          ),
-                          const Divider(height: 8),
-                          ListTile(
-                            onTap: () => _showFeatureMessage(
-                              _language == 'en'
-                                  ? 'Terms and conditions'
-                                  : _language == 'si'
-                                  ? 'නියම සහ කොන්දේසි'
-                                  : 'விதிமுறைகள் மற்றும் நிபந்தனைகள்',
-                            ),
-                            leading: const CircleAvatar(
-                              backgroundColor: Color(0xFFF3E5F5),
-                              child: Icon(
-                                Icons.description_outlined,
-                                color: Color(0xFF8E24AA),
-                              ),
-                            ),
-                            title: Text(
-                              _language == 'en'
-                                  ? 'Terms & Conditions'
-                                  : _language == 'si'
-                                  ? 'නියම සහ කොන්දේසි'
-                                  : 'விதிமுறைகள் மற்றும் நிபந்தனைகள்',
-                            ),
-                            trailing: const Icon(Icons.chevron_right),
-                          ),
-                          const Divider(height: 8),
-                          ListTile(
-                            onTap: () => _showFeatureMessage(
-                              _language == 'en'
-                                  ? 'Thanks for rating us!'
-                                  : _language == 'si'
-                                  ? 'අපව ඇගයීමට ස්තූතියි!'
-                                  : 'எங்களை மதிப்பீடு செய்ததற்கு நன்றி!',
-                            ),
-                            leading: const CircleAvatar(
-                              backgroundColor: Color(0xFFFFFDE7),
-                              child: Icon(
-                                Icons.star_outline,
-                                color: Color(0xFFF9A825),
-                              ),
-                            ),
-                            title: Text(
-                              _language == 'en'
-                                  ? 'Rate App'
-                                  : _language == 'si'
-                                  ? 'යෙදුම ඇගයන්න'
-                                  : 'அப்பை மதிப்பிடவும்',
-                            ),
-                            trailing: const Icon(Icons.chevron_right),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // About
-                  Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 32,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  color: theme.dividerColor.withValues(
-                                    alpha: 0.3,
-                                  ),
-                                ),
-                                child: Icon(
-                                  Icons.info_outline,
-                                  size: 18,
-                                  color: theme.colorScheme.onSurface,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                _aboutLabel(),
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Sevix Worker',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _language == 'en'
-                                ? 'Version 1.0.0'
-                                : _language == 'si'
-                                ? 'අනුවාදය 1.0.0'
-                                : 'பதிப்பு 1.0.0',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            _language == 'en'
-                                ? '© 2025 Sevix. All rights reserved.'
-                                : _language == 'si'
-                                ? '© 2025 Sevix. සියලු හිමිකම් ඇවිරිණි.'
-                                : '© 2025 Sevix. அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Account actions
-                  Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 32,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  color: theme.dividerColor.withValues(
-                                    alpha: 0.3,
-                                  ),
-                                ),
-                                child: Icon(
-                                  Icons.shield_outlined,
-                                  size: 18,
-                                  color: theme.colorScheme.onSurface,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                _accountActionsLabel(),
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          ListTile(
-                            onTap: widget.onLogout,
-                            leading: const CircleAvatar(
-                              backgroundColor: Color(0xFFFFF3E0),
-                              child: Icon(
-                                Icons.logout,
-                                color: Color(0xFFFF9800),
-                              ),
-                            ),
-                            title: Text(
-                              _logoutLabel(),
-                              style: const TextStyle(color: Color(0xFFFF9800)),
-                            ),
-                            subtitle: Text(
-                              _language == 'en'
-                                  ? 'Sign out of your account'
-                                  : _language == 'si'
-                                  ? 'ඔබේ ගිණුමෙන් ඉවත් වන්න'
-                                  : 'உங்கள் கணக்கிலிருந்து வெளியேறவும்',
-                            ),
-                            trailing: const Icon(Icons.chevron_right),
-                          ),
-                          const Divider(height: 8),
-                          ListTile(
-                            onTap: _confirmDeleteAccount,
-                            leading: const CircleAvatar(
-                              backgroundColor: Color(0xFFFFEBEE),
-                              child: Icon(
-                                Icons.delete_outline,
-                                color: Color(0xFFE74C3C),
-                              ),
-                            ),
-                            title: Text(
-                              _deleteAccountLabel(),
-                              style: const TextStyle(color: Color(0xFFE74C3C)),
-                            ),
-                            subtitle: Text(
-                              _language == 'en'
-                                  ? 'Permanently delete your account'
-                                  : _language == 'si'
-                                  ? 'ඔබේ ගිණුම ස්ථිරව මකන්න'
-                                  : 'உங்கள் கணக்கை நிரந்தரமாக நீக்கவும்',
-                            ),
-                            trailing: const Icon(Icons.chevron_right),
-                          ),
-                        ],
-                      ),
-                    ),
+                    trailing: const Icon(Icons.chevron_right),
                   ),
                 ],
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                children: [
+                  ListTile(
+                    onTap: widget.onLogout,
+                    leading: const CircleAvatar(
+                      backgroundColor: Color(0xFFFFF3E0),
+                      child: Icon(Icons.logout, color: Color(0xFFFF9800)),
+                    ),
+                    title: Text(_logoutLabel()),
+                    trailing: const Icon(Icons.chevron_right),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    onTap: _confirmDeleteAccount,
+                    leading: const CircleAvatar(
+                      backgroundColor: Color(0xFFFFEBEE),
+                      child: Icon(
+                        Icons.person_off_outlined,
+                        color: Color(0xFFE74C3C),
+                      ),
+                    ),
+                    title: Text(
+                      _deleteAccountLabel(),
+                      style: const TextStyle(color: Color(0xFFE74C3C)),
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

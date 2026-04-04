@@ -10,13 +10,27 @@ import 'worker_job.dart';
 import 'bid_status_screen.dart';
 import 'wallet_screen.dart';
 import 'notifications_screen.dart';
+import 'worker_profile_data.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  ThemeMode _themeMode = ThemeMode.light;
+
+  void _setDarkMode(bool enabled) {
+    setState(() {
+      _themeMode = enabled ? ThemeMode.dark : ThemeMode.light;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +41,18 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0B1533)),
         useMaterial3: true,
       ),
-      home: const _RootScreen(),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF0B1533),
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+      ),
+      themeMode: _themeMode,
+      home: _RootScreen(
+        isDarkMode: _themeMode == ThemeMode.dark,
+        onThemeToggle: _setDarkMode,
+      ),
     );
   }
 }
@@ -75,7 +100,10 @@ class EarningsData {
 }
 
 class _RootScreen extends StatefulWidget {
-  const _RootScreen();
+  final bool isDarkMode;
+  final ValueChanged<bool> onThemeToggle;
+
+  const _RootScreen({required this.isDarkMode, required this.onThemeToggle});
 
   @override
   State<_RootScreen> createState() => _RootScreenState();
@@ -85,6 +113,7 @@ class _RootScreenState extends State<_RootScreen> {
   String? _language; // 'en', 'si', 'ta'
   _AuthScreen _authScreen = _AuthScreen.language;
   String _pendingPhoneNumber = '';
+  WorkerProfileData _profileData = WorkerProfileData.empty();
 
   _TabType _activeTab = _TabType.home;
   bool _isOnline = true;
@@ -191,6 +220,25 @@ class _RootScreenState extends State<_RootScreen> {
     }).toList();
   }
 
+  String _workerTypeFromId(String id) {
+    switch (id) {
+      case 'plumber':
+        return 'Plumber';
+      case 'electrician':
+        return 'Electrician';
+      case 'carpenter':
+        return 'Carpenter';
+      case 'painter':
+        return 'Painter';
+      case 'ac-technician':
+        return 'AC Technician';
+      case 'mechanic':
+        return 'Mechanic';
+      default:
+        return 'Worker';
+    }
+  }
+
   void _openJobFeed() {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => JobFeedScreen(jobs: _toWorkerJobs())),
@@ -275,8 +323,13 @@ class _RootScreenState extends State<_RootScreen> {
     if (_authScreen == _AuthScreen.signup) {
       return SignupScreen(
         selectedLanguage: _language ?? 'en',
-        onSignUpSuccess: () {
+        onSignUpSuccess: (profile) {
           setState(() {
+            _profileData = profile;
+            _userName = profile.fullName.isEmpty ? _userName : profile.fullName;
+            if (profile.workerTypes.isNotEmpty) {
+              _workerType = _workerTypeFromId(profile.workerTypes.first);
+            }
             _pendingPhoneNumber = '+94 000 0000';
             _authScreen = _AuthScreen.otp;
           });
@@ -779,6 +832,8 @@ class _RootScreenState extends State<_RootScreen> {
               _language = code;
             });
           },
+          isDarkMode: widget.isDarkMode,
+          onThemeToggle: widget.onThemeToggle,
           onLogout: () {
             setState(() {
               _authScreen = _AuthScreen.login;
@@ -791,15 +846,17 @@ class _RootScreenState extends State<_RootScreen> {
               _activeTab = _TabType.home;
             });
           },
-          onOpenProfile: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Profile screen not implemented yet'),
-              ),
-            );
-          },
-          onEditProfile: () {
-            // Can hook into a dedicated profile edit screen later
+          profileData: _profileData,
+          onProfileUpdated: (profile) {
+            setState(() {
+              _profileData = profile;
+              if (profile.fullName.isNotEmpty) {
+                _userName = profile.fullName;
+              }
+              if (profile.workerTypes.isNotEmpty) {
+                _workerType = _workerTypeFromId(profile.workerTypes.first);
+              }
+            });
           },
         );
         break;
