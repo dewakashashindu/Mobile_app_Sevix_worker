@@ -7,8 +7,13 @@ import 'worker_job.dart';
 
 class JobDetailScreen extends StatefulWidget {
   final WorkerJob job;
+  final String selectedLanguage;
 
-  const JobDetailScreen({super.key, required this.job});
+  const JobDetailScreen({
+    super.key,
+    required this.job,
+    this.selectedLanguage = 'en',
+  });
 
   @override
   State<JobDetailScreen> createState() => _JobDetailScreenState();
@@ -17,6 +22,18 @@ class JobDetailScreen extends StatefulWidget {
 class _JobDetailScreenState extends State<JobDetailScreen> {
   Timer? _timer;
   Duration _remaining = Duration.zero;
+
+  String _t(String en, String si, String ta) {
+    switch (widget.selectedLanguage) {
+      case 'si':
+        return si;
+      case 'ta':
+        return ta;
+      case 'en':
+      default:
+        return en;
+    }
+  }
 
   @override
   void initState() {
@@ -53,7 +70,9 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
     final job = widget.job;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Job Details')),
+      appBar: AppBar(
+        title: Text(_t('Job Details', 'වැඩ විස්තර', 'வேலை விவரங்கள்')),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -69,20 +88,28 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${job.category} Request',
+                      '${job.category} ${_t('Request', 'ඉල්ලීම', 'கோரிக்கை')}',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Text('Customer: ${job.customerName}'),
+                    Text(
+                      '${_t('Customer', 'පාරිභෝගිකයා', 'வாடிக்கையாளர்')}: ${job.customerName}',
+                    ),
                     const SizedBox(height: 4),
-                    Text('Budget: Rs. ${job.budgetLkr}'),
+                    Text(
+                      '${_t('Budget', 'අයවැය', 'பட்ஜெட்')}: Rs. ${job.budgetLkr}',
+                    ),
                     const SizedBox(height: 4),
-                    Text('Estimated Time: ${job.estimatedTime}'),
+                    Text(
+                      '${_t('Estimated Time', 'ඇස්තමේන්තුගත කාලය', 'மதிப்பிடப்பட்ட நேரம்')}: ${job.estimatedTime}',
+                    ),
                     const SizedBox(height: 4),
-                    Text('Distance: ${job.distanceKm.toStringAsFixed(1)} km'),
+                    Text(
+                      '${_t('Distance', 'දුර', 'தூரம்')}: ${job.distanceKm.toStringAsFixed(1)} km',
+                    ),
                   ],
                 ),
               ),
@@ -98,8 +125,12 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                   children: [
                     const Icon(Icons.timer, color: Color(0xFFEF4444)),
                     const SizedBox(width: 8),
-                    const Text(
-                      'Bid window closes in:',
+                    Text(
+                      _t(
+                        'Bid window closes in:',
+                        'ලංසු කාලය අවසන් වන්නේ:',
+                        'ஏல சாளரம் மூடப்படுவது:',
+                      ),
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                     const Spacer(),
@@ -124,8 +155,8 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Map',
+                    Text(
+                      _t('Map', 'සිතියම', 'வரைபடம்'),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -159,7 +190,13 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                               ),
                             ),
                             const SizedBox(height: 2),
-                            const Text('Map integration placeholder'),
+                            Text(
+                              _t(
+                                'Map integration placeholder',
+                                'සිතියම් ඒකාබද්ධ කිරීම සඳහා තාවකාලික පෙන්නුම',
+                                'வரைபட ஒருங்கிணைப்புக்கான இடமாற்று',
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -178,8 +215,12 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Customer Note',
+                    Text(
+                      _t(
+                        'Customer Note',
+                        'පාරිභෝගික සටහන',
+                        'வாடிக்கையாளர் குறிப்பு',
+                      ),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -201,8 +242,8 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Photos',
+                    Text(
+                      _t('Photos', 'ඡායාරූප', 'புகைப்படங்கள்'),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -255,9 +296,13 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                 onPressed: () {
                   if (_remaining == Duration.zero) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content: Text(
-                          'Bid window has closed for this job request.',
+                          _t(
+                            'Bid window has closed for this job request.',
+                            'මෙම වැඩ ඉල්ලීම සඳහා ලංසු කාලය අවසන් වී ඇත.',
+                            'இந்த வேலை கோரிக்கைக்கான ஏல சாளரம் மூடப்பட்டுள்ளது.',
+                          ),
                         ),
                       ),
                     );
@@ -266,15 +311,22 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
 
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => SubmitBidScreen(job: job),
+                      builder: (_) => SubmitBidScreen(
+                        job: job,
+                        selectedLanguage: widget.selectedLanguage,
+                      ),
                     ),
                   );
                 },
                 icon: const Icon(Icons.gavel),
                 label: Text(
                   _remaining == Duration.zero
-                      ? 'Bid Window Closed'
-                      : 'Place Bid',
+                      ? _t(
+                          'Bid Window Closed',
+                          'ලංසු කාලය අවසන්',
+                          'ஏல சாளரம் மூடப்பட்டது',
+                        )
+                      : _t('Place Bid', 'ලංසුව තබන්න', 'ஏலம் இடுக'),
                 ),
               ),
             ),

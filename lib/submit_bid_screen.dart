@@ -8,8 +8,13 @@ import 'worker_job.dart';
 
 class SubmitBidScreen extends StatefulWidget {
   final WorkerJob job;
+  final String selectedLanguage;
 
-  const SubmitBidScreen({super.key, required this.job});
+  const SubmitBidScreen({
+    super.key,
+    required this.job,
+    this.selectedLanguage = 'en',
+  });
 
   @override
   State<SubmitBidScreen> createState() => _SubmitBidScreenState();
@@ -21,6 +26,18 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
   final TextEditingController _noteController = TextEditingController();
 
   bool _submitting = false;
+
+  String _t(String en, String si, String ta) {
+    switch (widget.selectedLanguage) {
+      case 'si':
+        return si;
+      case 'ta':
+        return ta;
+      case 'en':
+      default:
+        return en;
+    }
+  }
 
   int get _suggestedBidPrice {
     final base = widget.job.budgetLkr;
@@ -43,10 +60,22 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
     await showGeneralDialog<void>(
       context: context,
       barrierDismissible: false,
-      barrierLabel: 'Bid submitted',
+      barrierLabel: _t(
+        'Bid submitted',
+        'ලංසුව යොමු කරන ලදී',
+        'ஏலம் சமர்ப்பிக்கப்பட்டது',
+      ),
       barrierColor: Colors.black.withValues(alpha: 0.28),
       pageBuilder: (dialogContext, animation, secondaryAnimation) {
-        return const Center(child: _SuccessCheckDialog());
+        return Center(
+          child: _SuccessCheckDialog(
+            label: _t(
+              'Bid Submitted',
+              'ලංසුව යොමු කරන ලදී',
+              'ஏலம் சமர்ப்பிக்கப்பட்டது',
+            ),
+          ),
+        );
       },
       transitionBuilder: (context, animation, secondaryAnimation, child) {
         return FadeTransition(
@@ -85,15 +114,31 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
     final note = _noteController.text.trim();
 
     if (amount == null || amount <= 0) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Enter a valid bid amount')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _t(
+              'Enter a valid bid amount',
+              'වලංගු ලංසු මුදලක් ඇතුළත් කරන්න',
+              'சரியான ஏலத் தொகையை உள்ளிடவும்',
+            ),
+          ),
+        ),
+      );
       return;
     }
 
     if (eta.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter ETA / completion duration')),
+        SnackBar(
+          content: Text(
+            _t(
+              'Enter ETA / completion duration',
+              'ETA / අවසන් කාලය ඇතුළත් කරන්න',
+              'ETA / முடிக்கும் காலத்தை உள்ளிடவும்',
+            ),
+          ),
+        ),
       );
       return;
     }
@@ -131,6 +176,7 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
           eta: eta,
           note: note,
           status: status,
+          selectedLanguage: widget.selectedLanguage,
         ),
       ),
     );
@@ -139,7 +185,9 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Submit Bid')),
+      appBar: AppBar(
+        title: Text(_t('Submit Bid', 'ලංසුව යොමු කරන්න', 'ஏலம் சமர்ப்பி')),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -162,9 +210,13 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Text('Customer budget: Rs. ${widget.job.budgetLkr}'),
+                    Text(
+                      '${_t('Customer budget', 'පාරිභෝගික අයවැය', 'வாடிக்கையாளர் பட்ஜெட்')}: Rs. ${widget.job.budgetLkr}',
+                    ),
                     const SizedBox(height: 4),
-                    Text('Location: ${widget.job.location}'),
+                    Text(
+                      '${_t('Location', 'ස්ථානය', 'இடம்')}: ${widget.job.location}',
+                    ),
                   ],
                 ),
               ),
@@ -184,7 +236,7 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Suggested bid price: Rs. $_suggestedBidPrice',
+                      '${_t('Suggested bid price', 'නිර්දේශිත ලංසු මිල', 'பரிந்துரைக்கப்பட்ட ஏல விலை')}: Rs. $_suggestedBidPrice',
                       style: const TextStyle(
                         color: Color(0xFF1E3A8A),
                         fontWeight: FontWeight.w700,
@@ -196,7 +248,7 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
                       _amountController.text = _suggestedBidPrice.toString();
                       setState(() {});
                     },
-                    child: const Text('Use'),
+                    child: Text(_t('Use', 'භාවිතා කරන්න', 'பயன்படுத்து')),
                   ),
                 ],
               ),
@@ -205,17 +257,29 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
             TextField(
               controller: _amountController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Bid Amount (LKR)',
+              decoration: InputDecoration(
+                labelText: _t(
+                  'Bid Amount (LKR)',
+                  'ලංසු මුදල (LKR)',
+                  'ஏலத் தொகை (LKR)',
+                ),
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _etaController,
-              decoration: const InputDecoration(
-                labelText: 'ETA / Completion Duration',
-                hintText: 'e.g. 1-2 hours',
+              decoration: InputDecoration(
+                labelText: _t(
+                  'ETA / Completion Duration',
+                  'ETA / අවසන් කාලය',
+                  'ETA / முடிக்கும் நேரம்',
+                ),
+                hintText: _t(
+                  'e.g. 1-2 hours',
+                  'උදා: පැය 1-2',
+                  'எ.கா: 1-2 மணி நேரம்',
+                ),
                 border: OutlineInputBorder(),
               ),
             ),
@@ -223,9 +287,17 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
             TextField(
               controller: _noteController,
               maxLines: 4,
-              decoration: const InputDecoration(
-                labelText: 'Optional Note',
-                hintText: 'Add details for the customer',
+              decoration: InputDecoration(
+                labelText: _t(
+                  'Optional Note',
+                  'විකල්ප සටහන',
+                  'விருப்ப குறிப்பு',
+                ),
+                hintText: _t(
+                  'Add details for the customer',
+                  'පාරිභෝගිකයාට විස්තර එක් කරන්න',
+                  'வாடிக்கையாளருக்கான விவரங்களைச் சேர்க்கவும்',
+                ),
                 border: OutlineInputBorder(),
               ),
             ),
@@ -244,7 +316,17 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
                         )
                       : const Icon(Icons.send),
                   label: Text(
-                    _submitting ? 'Submitting...' : 'Confirm & Submit',
+                    _submitting
+                        ? _t(
+                            'Submitting...',
+                            'යොමු කරමින්...',
+                            'சமர்ப்பிக்கப்படுகிறது...',
+                          )
+                        : _t(
+                            'Confirm & Submit',
+                            'තහවුරු කර යොමු කරන්න',
+                            'உறுதி செய்து சமர்ப்பிக்கவும்',
+                          ),
                   ),
                 ),
               ),
@@ -257,7 +339,9 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
 }
 
 class _SuccessCheckDialog extends StatefulWidget {
-  const _SuccessCheckDialog();
+  final String label;
+
+  const _SuccessCheckDialog({required this.label});
 
   @override
   State<_SuccessCheckDialog> createState() => _SuccessCheckDialogState();
@@ -310,8 +394,8 @@ class _SuccessCheckDialogState extends State<_SuccessCheckDialog>
               ),
             ),
             const SizedBox(height: 10),
-            const Text(
-              'Bid Submitted',
+            Text(
+              widget.label,
               style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
             ),
           ],

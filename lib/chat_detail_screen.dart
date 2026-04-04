@@ -6,8 +6,13 @@ import 'chat_models.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   final ChatConversation conversation;
+  final String selectedLanguage;
 
-  const ChatDetailScreen({super.key, required this.conversation});
+  const ChatDetailScreen({
+    super.key,
+    required this.conversation,
+    this.selectedLanguage = 'en',
+  });
 
   @override
   State<ChatDetailScreen> createState() => _ChatDetailScreenState();
@@ -20,6 +25,18 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   late List<ChatMessage> _messages;
   bool _isTyping = false;
+
+  String _t(String en, String si, String ta) {
+    switch (widget.selectedLanguage) {
+      case 'si':
+        return si;
+      case 'ta':
+        return ta;
+      case 'en':
+      default:
+        return en;
+    }
+  }
 
   @override
   void initState() {
@@ -54,34 +71,64 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
   }
 
+  void _updateDeliveryStatus(String messageId, ChatDeliveryStatus status) {
+    final index = _messages.indexWhere((m) => m.id == messageId);
+    if (index < 0) return;
+    setState(() {
+      _messages[index] = _messages[index].copyWith(deliveryStatus: status);
+    });
+  }
+
   void _sendTextMessage() {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
 
     _messageController.clear();
+    final messageId = DateTime.now().microsecondsSinceEpoch.toString();
     _appendMessage(
       ChatMessage(
-        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        id: messageId,
         type: ChatMessageType.text,
         text: text,
         isMe: true,
         timestamp: DateTime.now(),
+        deliveryStatus: ChatDeliveryStatus.sent,
       ),
     );
+
+    Future<void>.delayed(const Duration(milliseconds: 650), () {
+      if (!mounted) return;
+      _updateDeliveryStatus(messageId, ChatDeliveryStatus.delivered);
+    });
+    Future<void>.delayed(const Duration(milliseconds: 1550), () {
+      if (!mounted) return;
+      _updateDeliveryStatus(messageId, ChatDeliveryStatus.read);
+    });
 
     _simulateTypingReply();
   }
 
   void _sendImageMessage() {
+    final messageId = DateTime.now().microsecondsSinceEpoch.toString();
     _appendMessage(
       ChatMessage(
-        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        id: messageId,
         type: ChatMessageType.image,
-        text: 'Image message',
+        text: _t('Image message', 'ඡායාරූප පණිවිඩය', 'படச் செய்தி'),
         isMe: true,
         timestamp: DateTime.now(),
+        deliveryStatus: ChatDeliveryStatus.sent,
       ),
     );
+
+    Future<void>.delayed(const Duration(milliseconds: 650), () {
+      if (!mounted) return;
+      _updateDeliveryStatus(messageId, ChatDeliveryStatus.delivered);
+    });
+    Future<void>.delayed(const Duration(milliseconds: 1550), () {
+      if (!mounted) return;
+      _updateDeliveryStatus(messageId, ChatDeliveryStatus.read);
+    });
 
     _simulateTypingReply();
   }
@@ -106,7 +153,11 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       ChatMessage(
         id: DateTime.now().microsecondsSinceEpoch.toString(),
         type: ChatMessageType.text,
-        text: 'Got it. I will get back to you shortly.',
+        text: _t(
+          'Got it. I will get back to you shortly.',
+          'හරි. මම ඉක්මනින් ඔබට පිළිතුරු දෙන්නම්.',
+          'சரி. விரைவில் உங்களிடம் மீண்டும் தொடர்புகொள்கிறேன்.',
+        ),
         isMe: false,
         timestamp: DateTime.now(),
       ),
@@ -130,12 +181,35 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
-        child: const Text(
-          'Typing...',
-          style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+        child: Text(
+          _t('Typing...', 'ටයිප් කරමින්...', 'தட்டச்சு செய்கிறார்...'),
+          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
         ),
       ),
     );
+  }
+
+  (IconData, Color, String) _deliveryMeta(ChatDeliveryStatus status) {
+    switch (status) {
+      case ChatDeliveryStatus.sent:
+        return (
+          Icons.done,
+          const Color(0xFFCBD5E1),
+          _t('Sent', 'යවන ලදී', 'அனுப்பப்பட்டது'),
+        );
+      case ChatDeliveryStatus.delivered:
+        return (
+          Icons.done_all,
+          const Color(0xFFCBD5E1),
+          _t('Delivered', 'ලැබුණා', 'சென்றது'),
+        );
+      case ChatDeliveryStatus.read:
+        return (
+          Icons.done_all,
+          const Color(0xFF60A5FA),
+          _t('Read', 'කියවීය', 'படிக்கப்பட்டது'),
+        );
+    }
   }
 
   Widget _buildMessageBubble(ChatMessage message, Animation<double> animation) {
@@ -197,7 +271,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Image',
+                          _t('Image', 'ඡායාරූපය', 'படம்'),
                           style: TextStyle(
                             color: isMe
                                 ? Colors.white
@@ -210,14 +284,33 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   ),
                 ),
               const SizedBox(height: 4),
-              Text(
-                _timeText(message.timestamp),
-                style: TextStyle(
-                  fontSize: 11,
-                  color: isMe
-                      ? const Color.fromARGB(210, 255, 255, 255)
-                      : const Color(0xFF64748B),
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _timeText(message.timestamp),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isMe
+                          ? const Color.fromARGB(210, 255, 255, 255)
+                          : const Color(0xFF64748B),
+                    ),
+                  ),
+                  if (isMe) ...[
+                    const SizedBox(width: 6),
+                    Builder(
+                      builder: (_) {
+                        final (icon, color, label) = _deliveryMeta(
+                          message.deliveryStatus,
+                        );
+                        return Tooltip(
+                          message: label,
+                          child: Icon(icon, size: 14, color: color),
+                        );
+                      },
+                    ),
+                  ],
+                ],
               ),
             ],
           ),
@@ -285,7 +378,11 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   IconButton(
                     onPressed: _sendImageMessage,
                     icon: const Icon(Icons.image_outlined),
-                    tooltip: 'Send image message',
+                    tooltip: _t(
+                      'Send image message',
+                      'ඡායාරූප පණිවිඩය යවන්න',
+                      'படச் செய்தியை அனுப்பு',
+                    ),
                   ),
                   Expanded(
                     child: TextField(
@@ -293,7 +390,11 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => _sendTextMessage(),
                       decoration: InputDecoration(
-                        hintText: 'Type a message',
+                        hintText: _t(
+                          'Type a message',
+                          'පණිවිඩයක් ටයිප් කරන්න',
+                          'செய்தி தட்டச்சு செய்யவும்',
+                        ),
                         filled: true,
                         fillColor: Colors.white,
                         contentPadding: const EdgeInsets.symmetric(

@@ -10,14 +10,31 @@ import 'worker_job.dart';
 
 class JobFeedScreen extends StatefulWidget {
   final List<WorkerJob> jobs;
+  final String selectedLanguage;
 
-  const JobFeedScreen({super.key, required this.jobs});
+  const JobFeedScreen({
+    super.key,
+    required this.jobs,
+    this.selectedLanguage = 'en',
+  });
 
   @override
   State<JobFeedScreen> createState() => _JobFeedScreenState();
 }
 
 class _JobFeedScreenState extends State<JobFeedScreen> {
+  String _t(String en, String si, String ta) {
+    switch (widget.selectedLanguage) {
+      case 'si':
+        return si;
+      case 'ta':
+        return ta;
+      case 'en':
+      default:
+        return en;
+    }
+  }
+
   double _maxDistance = 15;
   RangeValues _budgetRange = const RangeValues(1000, 10000);
   String _selectedCategory = 'All';
@@ -113,7 +130,15 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
 
     if (source == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No jobs available for bid status yet.')),
+        SnackBar(
+          content: Text(
+            _t(
+              'No jobs available for bid status yet.',
+              'තවම ලංසු තත්ත්වය බැලීමට වැඩ නොමැත.',
+              'ஏலம் நிலையை பார்க்க இன்னும் வேலைகள் இல்லை.',
+            ),
+          ),
+        ),
       );
       return;
     }
@@ -126,6 +151,7 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
           eta: source.estimatedTime,
           note: '',
           status: 'Pending',
+          selectedLanguage: widget.selectedLanguage,
         ),
       ),
     );
@@ -138,12 +164,12 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Job Feed'),
+        title: Text(_t('Job Feed', 'රැකියා පෝෂකය', 'வேலை பட்டியல்')),
         actions: [
           TextButton.icon(
             onPressed: _openBidStatus,
             icon: const Icon(Icons.assignment_turned_in_outlined, size: 18),
-            label: const Text('Bid Status'),
+            label: Text(_t('Bid Status', 'ලංසු තත්ත්වය', 'ஏலம் நிலை')),
           ),
           const SizedBox(width: 8),
         ],
@@ -167,12 +193,18 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Filters',
+                Text(
+                  _t('Filters', 'පෙරහන්', 'வடிகட்டிகள்'),
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 10),
-                Text('Distance: up to ${_maxDistance.toStringAsFixed(1)} km'),
+                Text(
+                  _t(
+                    'Distance: up to ${_maxDistance.toStringAsFixed(1)} km',
+                    'දුර: ${_maxDistance.toStringAsFixed(1)} km දක්වා',
+                    'தூரம்: ${_maxDistance.toStringAsFixed(1)} km வரை',
+                  ),
+                ),
                 Slider(
                   value: _maxDistance,
                   min: 1,
@@ -180,7 +212,11 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
                   onChanged: (v) => setState(() => _maxDistance = v),
                 ),
                 Text(
-                  'Budget: Rs. ${_budgetRange.start.round()} - Rs. ${_budgetRange.end.round()}',
+                  _t(
+                    'Budget: Rs. ${_budgetRange.start.round()} - Rs. ${_budgetRange.end.round()}',
+                    'අයවැය: රු. ${_budgetRange.start.round()} - රු. ${_budgetRange.end.round()}',
+                    'பட்ஜெட்: ரூ. ${_budgetRange.start.round()} - ரூ. ${_budgetRange.end.round()}',
+                  ),
                 ),
                 RangeSlider(
                   values: _budgetRange,
@@ -190,7 +226,7 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
                   onChanged: (v) => setState(() => _budgetRange = v),
                 ),
                 const SizedBox(height: 6),
-                const Text('Category'),
+                Text(_t('Category', 'ප්‍රවර්ගය', 'வகை')),
                 const SizedBox(height: 6),
                 Wrap(
                   spacing: 8,
@@ -209,14 +245,20 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
                       .toList(),
                 ),
                 const SizedBox(height: 10),
-                const Text('Urgency'),
+                Text(_t('Urgency', 'හදිසිභාවය', 'அவசரம்')),
                 const SizedBox(height: 6),
                 Wrap(
                   spacing: 8,
                   children: ['All', 'low', 'medium', 'high']
                       .map(
                         (urgency) => ChoiceChip(
-                          label: Text(urgency.toUpperCase()),
+                          label: Text(switch (urgency) {
+                            'All' => _t('ALL', 'සියල්ල', 'அனைத்தும்'),
+                            'low' => _t('LOW', 'අඩු', 'குறைவு'),
+                            'medium' => _t('MEDIUM', 'මධ්‍යම', 'நடுத்தரம்'),
+                            'high' => _t('HIGH', 'ඉහළ', 'உயர்'),
+                            _ => urgency.toUpperCase(),
+                          }),
                           selected: _selectedUrgency == urgency,
                           onSelected: (_) {
                             setState(() {
@@ -235,11 +277,21 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Nearby Matching Jobs',
+                Text(
+                  _t(
+                    'Nearby Matching Jobs',
+                    'ආසන්න ගැලපෙන වැඩ',
+                    'அருகிலுள்ள பொருந்தும் வேலைகள்',
+                  ),
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                 ),
-                Text('${jobs.length} results'),
+                Text(
+                  _t(
+                    '${jobs.length} results',
+                    'ප්‍රතිඵල ${jobs.length}',
+                    '${jobs.length} முடிவுகள்',
+                  ),
+                ),
               ],
             ),
           ),
@@ -271,7 +323,7 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
                               ),
                               const SizedBox(width: 5),
                               Text(
-                                '${job.category} • Recommended for you',
+                                '${job.category} • ${_t('Recommended for you', 'ඔබ සඳහා නිර්දේශිතයි', 'உங்களுக்கான பரிந்துரை')}',
                                 style: const TextStyle(
                                   fontSize: 12,
                                   color: Color(0xFF1E3A8A),
@@ -288,180 +340,241 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
             ),
           const SizedBox(height: 6),
           Expanded(
-            child: _isLoading
-                ? ShimmerSkeleton(
-                    child: ListView.builder(
+            child: RefreshIndicator(
+              onRefresh: _loadJobs,
+              child: _isLoading
+                  ? ShimmerSkeleton(
+                      child: ListView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+                        itemCount: 6,
+                        itemBuilder: (_, index) {
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: const Padding(
+                              padding: EdgeInsets.all(14),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      SkeletonBox(width: 190, height: 16),
+                                      Spacer(),
+                                      SkeletonBox(width: 56, height: 20),
+                                    ],
+                                  ),
+                                  SizedBox(height: 10),
+                                  SkeletonBox(width: 220, height: 12),
+                                  SizedBox(height: 8),
+                                  SkeletonBox(width: 180, height: 12),
+                                  SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      SkeletonBox(width: 90, height: 12),
+                                      Spacer(),
+                                      SkeletonBox(width: 80, height: 12),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    )
+                  : _errorType != null
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
-                      itemCount: 6,
-                      itemBuilder: (_, index) {
+                      children: [
+                        const SizedBox(height: 60),
+                        ErrorStateView(
+                          type: _errorType!,
+                          onRetry: _loadJobs,
+                          selectedLanguage: widget.selectedLanguage,
+                        ),
+                      ],
+                    )
+                  : jobs.isEmpty
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+                      children: [
+                        const SizedBox(height: 80),
+                        Center(
+                          child: Text(
+                            _t(
+                              'No matching jobs. Try changing filters.',
+                              'ගැලපෙන වැඩ නොමැත. පෙරහන් වෙනස් කර බලන්න.',
+                              'பொருந்தும் வேலை இல்லை. வடிகட்டிகளை மாற்றிப் பாருங்கள்.',
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+                      itemCount: jobs.length,
+                      itemBuilder: (context, index) {
+                        final job = jobs[index];
+                        final isRecommended = recommendedIds.contains(job.id);
                         return Card(
                           margin: const EdgeInsets.only(bottom: 10),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
+                            side: BorderSide(
+                              color: isRecommended
+                                  ? const Color(0xFFC7DAFF)
+                                  : Colors.transparent,
+                            ),
                           ),
-                          child: const Padding(
-                            padding: EdgeInsets.all(14),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    SkeletonBox(width: 190, height: 16),
-                                    Spacer(),
-                                    SkeletonBox(width: 56, height: 20),
-                                  ],
+                          color: isRecommended
+                              ? const Color(0xFFF8FBFF)
+                              : Colors.white,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(14),
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => JobDetailScreen(
+                                    job: job,
+                                    selectedLanguage: widget.selectedLanguage,
+                                  ),
                                 ),
-                                SizedBox(height: 10),
-                                SkeletonBox(width: 220, height: 12),
-                                SizedBox(height: 8),
-                                SkeletonBox(width: 180, height: 12),
-                                SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    SkeletonBox(width: 90, height: 12),
-                                    Spacer(),
-                                    SkeletonBox(width: 80, height: 12),
-                                  ],
-                                ),
-                              ],
+                              );
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.all(14),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          '${job.category} • ${job.customerName}',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: _urgencyColor(
+                                            job.urgency,
+                                          ).withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          switch (job.urgency) {
+                                            'high' => _t('HIGH', 'ඉහළ', 'உயர்'),
+                                            'medium' => _t(
+                                              'MEDIUM',
+                                              'මධ්‍යම',
+                                              'நடுத்தரம்',
+                                            ),
+                                            'low' => _t('LOW', 'අඩු', 'குறைவு'),
+                                            _ => job.urgency.toUpperCase(),
+                                          },
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
+                                            color: _urgencyColor(job.urgency),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  if (isRecommended)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 8),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFEAF2FF),
+                                          borderRadius: BorderRadius.circular(
+                                            999,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          _t(
+                                            'Recommended for you',
+                                            'ඔබ සඳහා නිර්දේශිතයි',
+                                            'உங்களுக்கான பரிந்துரை',
+                                          ),
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFF1D4ED8),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  const SizedBox(height: 8),
+                                  Text(job.location),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${job.distanceKm.toStringAsFixed(1)} km • Rs. ${job.budgetLkr} • ${job.estimatedTime}',
+                                    style: const TextStyle(
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.timer_outlined,
+                                        size: 16,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      _InlineCountdownText(
+                                        deadline: job.bidDeadline,
+                                      ),
+                                      const Spacer(),
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder: (_) => JobDetailScreen(
+                                                job: job,
+                                                selectedLanguage:
+                                                    widget.selectedLanguage,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        child: Text(
+                                          _t(
+                                            'View Details',
+                                            'විස්තර බලන්න',
+                                            'விவரங்களைப் பார்க்கவும்',
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         );
                       },
                     ),
-                  )
-                : _errorType != null
-                ? ErrorStateView(type: _errorType!, onRetry: _loadJobs)
-                : jobs.isEmpty
-                ? const Center(
-                    child: Text('No matching jobs. Try changing filters.'),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
-                    itemCount: jobs.length,
-                    itemBuilder: (context, index) {
-                      final job = jobs[index];
-                      final isRecommended = recommendedIds.contains(job.id);
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          side: BorderSide(
-                            color: isRecommended
-                                ? const Color(0xFFC7DAFF)
-                                : Colors.transparent,
-                          ),
-                        ),
-                        color: isRecommended
-                            ? const Color(0xFFF8FBFF)
-                            : Colors.white,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(14),
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => JobDetailScreen(job: job),
-                              ),
-                            );
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.all(14),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        '${job.category} • ${job.customerName}',
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: _urgencyColor(
-                                          job.urgency,
-                                        ).withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        job.urgency.toUpperCase(),
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w700,
-                                          color: _urgencyColor(job.urgency),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                if (isRecommended)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFEAF2FF),
-                                        borderRadius: BorderRadius.circular(
-                                          999,
-                                        ),
-                                      ),
-                                      child: const Text(
-                                        'Recommended for you',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFF1D4ED8),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                const SizedBox(height: 8),
-                                Text(job.location),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${job.distanceKm.toStringAsFixed(1)} km • Rs. ${job.budgetLkr} • ${job.estimatedTime}',
-                                  style: const TextStyle(color: Colors.black54),
-                                ),
-                                const SizedBox(height: 10),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.timer_outlined, size: 16),
-                                    const SizedBox(width: 6),
-                                    _InlineCountdownText(
-                                      deadline: job.bidDeadline,
-                                    ),
-                                    const Spacer(),
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                JobDetailScreen(job: job),
-                                          ),
-                                        );
-                                      },
-                                      child: const Text('View Details'),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+            ),
           ),
         ],
       ),

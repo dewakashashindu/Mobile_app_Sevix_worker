@@ -150,18 +150,91 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Map<String, bool> _completionChecks() {
     final p = widget.profileData;
     return {
-      'Profile Photo': p.profilePhotoPath.trim().isNotEmpty,
-      'Full Name': p.fullName.trim().isNotEmpty,
-      'Email': p.email.trim().isNotEmpty,
-      'Telephone': p.telephone.trim().isNotEmpty,
-      'Date of Birth': p.dateOfBirth.trim().isNotEmpty,
-      'Address': p.address.trim().isNotEmpty,
-      'City': p.city.trim().isNotEmpty,
-      'National ID': p.nationalId.trim().isNotEmpty,
-      'Experience': p.experienceYears.trim().isNotEmpty,
-      'Skills': p.workerTypes.isNotEmpty,
-      'Bio': p.bio.trim().isNotEmpty,
+      'profilePhoto': p.profilePhotoPath.trim().isNotEmpty,
+      'fullName': p.fullName.trim().isNotEmpty,
+      'email': p.email.trim().isNotEmpty,
+      'telephone': p.telephone.trim().isNotEmpty,
+      'dateOfBirth': p.dateOfBirth.trim().isNotEmpty,
+      'address': p.address.trim().isNotEmpty,
+      'city': p.city.trim().isNotEmpty,
+      'nationalId': p.nationalId.trim().isNotEmpty,
+      'experience': p.experienceYears.trim().isNotEmpty,
+      'skills': p.workerTypes.isNotEmpty,
+      'bio': p.bio.trim().isNotEmpty,
     };
+  }
+
+  String _fieldLabel(String key) {
+    switch (key) {
+      case 'profilePhoto':
+        return _language == 'si'
+            ? 'පැතිකඩ ඡායාරූපය'
+            : _language == 'ta'
+            ? 'சுயவிவர புகைப்படம்'
+            : 'Profile Photo';
+      case 'fullName':
+        return _language == 'si'
+            ? 'සම්පූර්ණ නම'
+            : _language == 'ta'
+            ? 'முழுப் பெயர்'
+            : 'Full Name';
+      case 'email':
+        return _language == 'si'
+            ? 'ඊමේල්'
+            : _language == 'ta'
+            ? 'மின்னஞ்சல்'
+            : 'Email';
+      case 'telephone':
+        return _language == 'si'
+            ? 'දුරකථන අංකය'
+            : _language == 'ta'
+            ? 'தொலைபேசி எண்'
+            : 'Telephone';
+      case 'dateOfBirth':
+        return _language == 'si'
+            ? 'උපන් දිනය'
+            : _language == 'ta'
+            ? 'பிறந்த தேதி'
+            : 'Date of Birth';
+      case 'address':
+        return _language == 'si'
+            ? 'ලිපිනය'
+            : _language == 'ta'
+            ? 'முகவரி'
+            : 'Address';
+      case 'city':
+        return _language == 'si'
+            ? 'නගරය'
+            : _language == 'ta'
+            ? 'நகரம்'
+            : 'City';
+      case 'nationalId':
+        return _language == 'si'
+            ? 'ජාතික හැඳුනුම්පත'
+            : _language == 'ta'
+            ? 'தேசிய அடையாள அட்டை'
+            : 'National ID';
+      case 'experience':
+        return _language == 'si'
+            ? 'අත්දැකීම්'
+            : _language == 'ta'
+            ? 'அனுபவம்'
+            : 'Experience';
+      case 'skills':
+        return _language == 'si'
+            ? 'කුසලතා'
+            : _language == 'ta'
+            ? 'திறன்கள்'
+            : 'Skills';
+      case 'bio':
+        return _language == 'si'
+            ? 'හැඳින්වීම'
+            : _language == 'ta'
+            ? 'சுய அறிமுகம்'
+            : 'Bio';
+      default:
+        return key;
+    }
   }
 
   int _completionPercent() {
@@ -174,7 +247,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final checks = _completionChecks();
     return checks.entries
         .where((entry) => !entry.value)
-        .map((entry) => entry.key)
+        .map((entry) => _fieldLabel(entry.key))
         .toList();
   }
 
@@ -720,8 +793,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           color: Color(0xFF0B1533),
                         ),
                         const SizedBox(width: 8),
-                        const Text(
-                          'Profile Completion',
+                        Text(
+                          _language == 'en'
+                              ? 'Profile Completion'
+                              : _language == 'si'
+                              ? 'පැතිකඩ සම්පූර්ණතාව'
+                              : 'சுயவிவர நிறைவு',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
@@ -752,8 +829,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    const Text(
-                      'Complete your profile to get more jobs',
+                    Text(
+                      _language == 'en'
+                          ? 'Complete your profile to get more jobs'
+                          : _language == 'si'
+                          ? 'තවත් වැඩ ලබා ගැනීමට පැතිකඩ සම්පූර්ණ කරන්න'
+                          : 'மேலும் வேலை பெற உங்கள் சுயவிவரத்தை நிறைவு செய்யவும்',
                       style: TextStyle(
                         fontSize: 13,
                         color: Color(0xFF334155),
@@ -762,8 +843,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     if (missing.isNotEmpty) ...[
                       const SizedBox(height: 10),
-                      const Text(
-                        'Missing fields',
+                      Text(
+                        _language == 'en'
+                            ? 'Missing fields'
+                            : _language == 'si'
+                            ? 'අඩු තොරතුරු'
+                            : 'இல்லாத புலங்கள்',
                         style: TextStyle(
                           fontSize: 12,
                           color: Color(0xFF64748B),

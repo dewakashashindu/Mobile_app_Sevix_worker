@@ -42,6 +42,22 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _agreedToTerms = false;
   String? _nicPhotoPath;
   final Set<String> _workerTypes = <String>{};
+  bool _submitted = false;
+
+  String? _nameError;
+  String? _dobError;
+  String? _nidError;
+  String? _nicPhotoError;
+  String? _phoneError;
+  String? _emailError;
+  String? _addressError;
+  String? _passwordError;
+  String? _confirmPasswordError;
+  String? _workerTypesError;
+  String? _experienceError;
+  String? _bioError;
+  String? _cityError;
+  String? _termsError;
 
   Map<String, Map<String, String>> get _translations => {
     'signUp': {'en': 'Sign Up', 'si': 'ලියාපදිංචි වන්න', 'ta': 'பதிவுசெய்க'},
@@ -75,10 +91,22 @@ class _SignupScreenState extends State<SignupScreen> {
       'ta': 'சேவைப் பணியாளராக இணையுங்கள்',
     },
     'error': {'en': 'Error', 'si': 'දෝෂයකි', 'ta': 'பிழை'},
+    'success': {'en': 'Success', 'si': 'සාර්ථකයි', 'ta': 'வெற்றி'},
+    'ok': {'en': 'OK', 'si': 'හරි', 'ta': 'சரி'},
     'fillAllFields': {
       'en': 'Please fill in all required fields',
       'si': 'කරුණාකර සියලුම අවශ්‍ය ක්ෂේත්‍ර පුරවන්න',
       'ta': 'தேவையான அனைத்து புலங்களையும் நிரப்பவும்',
+    },
+    'requiredField': {
+      'en': 'This field is required',
+      'si': 'මෙම ක්ෂේත්‍රය අවශ්‍යයි',
+      'ta': 'இந்த புலம் அவசியம்',
+    },
+    'invalidDob': {
+      'en': 'Use date format YYYY-MM-DD',
+      'si': 'දිනය YYYY-MM-DD ආකාරයෙන් දාන්න',
+      'ta': 'தேதி வடிவம் YYYY-MM-DD பயன்படுத்தவும்',
     },
     'invalidEmail': {
       'en': 'Please enter a valid email address',
@@ -238,6 +266,7 @@ class _SignupScreenState extends State<SignupScreen> {
       setState(() {
         _nicPhotoPath = result.path;
       });
+      _onFieldChanged();
     }
   }
 
@@ -251,6 +280,7 @@ class _SignupScreenState extends State<SignupScreen> {
       setState(() {
         _nicPhotoPath = result.path;
       });
+      _onFieldChanged();
     }
   }
 
@@ -313,6 +343,7 @@ class _SignupScreenState extends State<SignupScreen> {
         _workerTypes.add(id);
       }
     });
+    _onFieldChanged();
   }
 
   void _showMessage(String title, String message) {
@@ -324,14 +355,14 @@ class _SignupScreenState extends State<SignupScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
+            child: Text(_t('ok')),
           ),
         ],
       ),
     );
   }
 
-  void _handleSignUp() {
+  bool _validateForm() {
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final tel = _telephoneController.text.trim();
@@ -344,69 +375,92 @@ class _SignupScreenState extends State<SignupScreen> {
     final experience = _experienceController.text.trim();
     final bio = _bioController.text.trim();
 
-    if (name.isEmpty ||
-        email.isEmpty ||
-        tel.isEmpty ||
-        password.isEmpty ||
-        confirmPassword.isEmpty ||
-        dob.isEmpty ||
-        address.isEmpty ||
-        city.isEmpty ||
-        nid.isEmpty ||
-        experience.isEmpty ||
-        bio.isEmpty ||
-        _nicPhotoPath == null) {
-      _showMessage(_t('error'), _t('fillAllFields'));
-      return;
-    }
-
     final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
-    if (!emailRegex.hasMatch(email)) {
-      _showMessage(_t('error'), _t('invalidEmail'));
-      return;
-    }
-
     final telRegex = RegExp(r'^\d{7,15}$');
-    if (!telRegex.hasMatch(tel)) {
-      _showMessage(_t('error'), _t('invalidPhone'));
+    final dobRegex = RegExp(r'^\d{4}-\d{2}-\d{2}$');
+
+    _nameError = name.isEmpty ? _t('requiredField') : null;
+    _dobError = dob.isEmpty
+        ? _t('requiredField')
+        : (!dobRegex.hasMatch(dob) ? _t('invalidDob') : null);
+    _nidError = nid.isEmpty ? _t('requiredField') : null;
+    _nicPhotoError = _nicPhotoPath == null ? _t('requiredField') : null;
+    _phoneError = tel.isEmpty
+        ? _t('requiredField')
+        : (!telRegex.hasMatch(tel) ? _t('invalidPhone') : null);
+    _emailError = email.isEmpty
+        ? _t('requiredField')
+        : (!emailRegex.hasMatch(email) ? _t('invalidEmail') : null);
+    _addressError = address.isEmpty ? _t('requiredField') : null;
+    _passwordError = password.isEmpty
+        ? _t('requiredField')
+        : (password.length < 6 ? _t('passwordLength') : null);
+    _confirmPasswordError = confirmPassword.isEmpty
+        ? _t('requiredField')
+        : (password != confirmPassword ? _t('passwordMismatch') : null);
+    _workerTypesError = _workerTypes.isEmpty ? _t('selectWorkerType') : null;
+    _experienceError = experience.isEmpty ? _t('requiredField') : null;
+    _bioError = bio.isEmpty ? _t('requiredField') : null;
+    _cityError = city.isEmpty ? _t('requiredField') : null;
+    _termsError = _agreedToTerms ? null : _t('mustAgreeTerms');
+
+    setState(() {});
+
+    return [
+      _nameError,
+      _dobError,
+      _nidError,
+      _nicPhotoError,
+      _phoneError,
+      _emailError,
+      _addressError,
+      _passwordError,
+      _confirmPasswordError,
+      _workerTypesError,
+      _experienceError,
+      _bioError,
+      _cityError,
+      _termsError,
+    ].every((error) => error == null);
+  }
+
+  void _onFieldChanged() {
+    if (_submitted) {
+      _validateForm();
+    }
+  }
+
+  void _handleSignUp() {
+    setState(() {
+      _submitted = true;
+    });
+
+    if (!_validateForm()) {
       return;
     }
 
-    if (password.length < 6) {
-      _showMessage(_t('error'), _t('passwordLength'));
-      return;
-    }
-
-    if (password != confirmPassword) {
-      _showMessage(_t('error'), _t('passwordMismatch'));
-      return;
-    }
-
-    if (_workerTypes.isEmpty) {
-      _showMessage(_t('error'), _t('selectWorkerType'));
-      return;
-    }
-
-    if (!_agreedToTerms) {
-      _showMessage(_t('error'), _t('mustAgreeTerms'));
-      return;
-    }
-
-    _showMessage('Success', 'Signup successful!');
+    _showMessage(
+      _t('success'),
+      widget.selectedLanguage == 'si'
+          ? 'ලියාපදිංචිය සාර්ථකයි!'
+          : widget.selectedLanguage == 'ta'
+          ? 'பதிவு வெற்றிகரமாக முடிந்தது!'
+          : 'Signup successful!',
+    );
     widget.onSignUpSuccess(
       WorkerProfileData(
-        fullName: name,
+        fullName: _nameController.text.trim(),
         profilePhotoPath: '',
-        email: email,
+        email: _emailController.text.trim(),
         countryCode: _countryCode,
-        telephone: tel,
-        dateOfBirth: dob,
-        address: address,
-        city: city,
-        nationalId: nid,
+        telephone: _telephoneController.text.trim(),
+        dateOfBirth: _dateOfBirthController.text.trim(),
+        address: _addressController.text.trim(),
+        city: _cityController.text.trim(),
+        nationalId: _nationalIdController.text.trim(),
         workerTypes: _workerTypes.toList(),
-        experienceYears: experience,
-        bio: bio,
+        experienceYears: _experienceController.text.trim(),
+        bio: _bioController.text.trim(),
         serviceRadiusKm: _serviceRadius,
         nicPhotoPath: _nicPhotoPath ?? '',
       ),
@@ -484,6 +538,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           child: TextField(
                             controller: _nameController,
                             textCapitalization: TextCapitalization.words,
+                            onChanged: (_) => _onFieldChanged(),
                             decoration: InputDecoration(
                               border: InputBorder.none,
                               isCollapsed: true,
@@ -499,6 +554,10 @@ class _SignupScreenState extends State<SignupScreen> {
                       ],
                     ),
                   ),
+                  if (_nameError != null) ...[
+                    const SizedBox(height: 6),
+                    _FieldError(message: _nameError!),
+                  ],
                   const SizedBox(height: 16),
                   _InputLabel(label: _t('dateOfBirth'), color: textPrimary),
                   const SizedBox(height: 8),
@@ -517,6 +576,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           child: TextField(
                             controller: _dateOfBirthController,
                             keyboardType: TextInputType.datetime,
+                            onChanged: (_) => _onFieldChanged(),
                             decoration: InputDecoration(
                               border: InputBorder.none,
                               isCollapsed: true,
@@ -532,6 +592,10 @@ class _SignupScreenState extends State<SignupScreen> {
                       ],
                     ),
                   ),
+                  if (_dobError != null) ...[
+                    const SizedBox(height: 6),
+                    _FieldError(message: _dobError!),
+                  ],
                   const SizedBox(height: 16),
                   _InputLabel(label: _t('nationalId'), color: textPrimary),
                   const SizedBox(height: 8),
@@ -549,6 +613,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         Expanded(
                           child: TextField(
                             controller: _nationalIdController,
+                            onChanged: (_) => _onFieldChanged(),
                             decoration: InputDecoration(
                               border: InputBorder.none,
                               isCollapsed: true,
@@ -564,6 +629,10 @@ class _SignupScreenState extends State<SignupScreen> {
                       ],
                     ),
                   ),
+                  if (_nidError != null) ...[
+                    const SizedBox(height: 6),
+                    _FieldError(message: _nidError!),
+                  ],
                   const SizedBox(height: 16),
                   _InputLabel(
                     label: '${_t('nationalId')} Photo',
@@ -664,6 +733,10 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                       ),
                     ),
+                  if (_nicPhotoError != null) ...[
+                    const SizedBox(height: 6),
+                    _FieldError(message: _nicPhotoError!),
+                  ],
 
                   const SizedBox(height: 16),
                   _InputLabel(label: _t('telephone'), color: textPrimary),
@@ -714,6 +787,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           child: TextField(
                             controller: _telephoneController,
                             keyboardType: TextInputType.phone,
+                            onChanged: (_) => _onFieldChanged(),
                             decoration: InputDecoration(
                               border: InputBorder.none,
                               isCollapsed: true,
@@ -729,6 +803,10 @@ class _SignupScreenState extends State<SignupScreen> {
                       ],
                     ),
                   ),
+                  if (_phoneError != null) ...[
+                    const SizedBox(height: 6),
+                    _FieldError(message: _phoneError!),
+                  ],
 
                   const SizedBox(height: 16),
                   _InputLabel(label: _t('email'), color: textPrimary),
@@ -748,6 +826,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           child: TextField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
+                            onChanged: (_) => _onFieldChanged(),
                             decoration: InputDecoration(
                               border: InputBorder.none,
                               isCollapsed: true,
@@ -763,6 +842,10 @@ class _SignupScreenState extends State<SignupScreen> {
                       ],
                     ),
                   ),
+                  if (_emailError != null) ...[
+                    const SizedBox(height: 6),
+                    _FieldError(message: _emailError!),
+                  ],
 
                   const SizedBox(height: 16),
                   _InputLabel(label: _t('address'), color: textPrimary),
@@ -781,6 +864,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         Expanded(
                           child: TextField(
                             controller: _addressController,
+                            onChanged: (_) => _onFieldChanged(),
                             decoration: InputDecoration(
                               border: InputBorder.none,
                               isCollapsed: true,
@@ -796,6 +880,10 @@ class _SignupScreenState extends State<SignupScreen> {
                       ],
                     ),
                   ),
+                  if (_addressError != null) ...[
+                    const SizedBox(height: 6),
+                    _FieldError(message: _addressError!),
+                  ],
 
                   const SizedBox(height: 16),
                   _InputLabel(label: _t('password'), color: textPrimary),
@@ -815,6 +903,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           child: TextField(
                             controller: _passwordController,
                             obscureText: !_showPassword,
+                            onChanged: (_) => _onFieldChanged(),
                             decoration: InputDecoration(
                               border: InputBorder.none,
                               isCollapsed: true,
@@ -847,6 +936,10 @@ class _SignupScreenState extends State<SignupScreen> {
                       ],
                     ),
                   ),
+                  if (_passwordError != null) ...[
+                    const SizedBox(height: 6),
+                    _FieldError(message: _passwordError!),
+                  ],
 
                   const SizedBox(height: 16),
                   _InputLabel(label: _t('confirmPassword'), color: textPrimary),
@@ -866,6 +959,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           child: TextField(
                             controller: _confirmPasswordController,
                             obscureText: !_showPassword,
+                            onChanged: (_) => _onFieldChanged(),
                             decoration: InputDecoration(
                               border: InputBorder.none,
                               isCollapsed: true,
@@ -881,6 +975,10 @@ class _SignupScreenState extends State<SignupScreen> {
                       ],
                     ),
                   ),
+                  if (_confirmPasswordError != null) ...[
+                    const SizedBox(height: 6),
+                    _FieldError(message: _confirmPasswordError!),
+                  ],
 
                   const SizedBox(height: 24),
                   _SectionHeader(
@@ -962,6 +1060,10 @@ class _SignupScreenState extends State<SignupScreen> {
                       );
                     }).toList(),
                   ),
+                  if (_workerTypesError != null) ...[
+                    const SizedBox(height: 6),
+                    _FieldError(message: _workerTypesError!),
+                  ],
 
                   const SizedBox(height: 16),
                   _InputLabel(label: _t('experience'), color: textPrimary),
@@ -980,6 +1082,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         Expanded(
                           child: TextField(
                             controller: _experienceController,
+                            onChanged: (_) => _onFieldChanged(),
                             decoration: const InputDecoration(
                               border: InputBorder.none,
                               isCollapsed: true,
@@ -991,6 +1094,10 @@ class _SignupScreenState extends State<SignupScreen> {
                       ],
                     ),
                   ),
+                  if (_experienceError != null) ...[
+                    const SizedBox(height: 6),
+                    _FieldError(message: _experienceError!),
+                  ],
 
                   const SizedBox(height: 16),
                   _InputLabel(label: _t('bio'), color: textPrimary),
@@ -1018,6 +1125,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           child: TextField(
                             controller: _bioController,
                             maxLines: 3,
+                            onChanged: (_) => _onFieldChanged(),
                             decoration: InputDecoration(
                               border: InputBorder.none,
                               isCollapsed: true,
@@ -1033,6 +1141,10 @@ class _SignupScreenState extends State<SignupScreen> {
                       ],
                     ),
                   ),
+                  if (_bioError != null) ...[
+                    const SizedBox(height: 6),
+                    _FieldError(message: _bioError!),
+                  ],
 
                   const SizedBox(height: 24),
                   _SectionHeader(
@@ -1057,6 +1169,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         Expanded(
                           child: TextField(
                             controller: _cityController,
+                            onChanged: (_) => _onFieldChanged(),
                             decoration: InputDecoration(
                               border: InputBorder.none,
                               isCollapsed: true,
@@ -1072,6 +1185,10 @@ class _SignupScreenState extends State<SignupScreen> {
                       ],
                     ),
                   ),
+                  if (_cityError != null) ...[
+                    const SizedBox(height: 6),
+                    _FieldError(message: _cityError!),
+                  ],
 
                   const SizedBox(height: 16),
                   _InputLabel(label: _t('serviceRadius'), color: textPrimary),
@@ -1139,6 +1256,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           setState(() {
                             _agreedToTerms = v;
                           });
+                          _onFieldChanged();
                         },
                         activeColor: primaryColor,
                       ),
@@ -1155,6 +1273,10 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                     ],
                   ),
+                  if (_termsError != null) ...[
+                    const SizedBox(height: 6),
+                    _FieldError(message: _termsError!),
+                  ],
 
                   const SizedBox(height: 16),
                   SizedBox(
@@ -1272,6 +1394,24 @@ class _InputWrapper extends StatelessWidget {
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: child,
+    );
+  }
+}
+
+class _FieldError extends StatelessWidget {
+  final String message;
+
+  const _FieldError({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      message,
+      style: const TextStyle(
+        fontSize: 12,
+        color: Color(0xFFB42318),
+        fontWeight: FontWeight.w600,
+      ),
     );
   }
 }

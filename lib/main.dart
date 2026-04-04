@@ -243,7 +243,12 @@ class _RootScreenState extends State<_RootScreen> {
 
   void _openJobFeed() {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => JobFeedScreen(jobs: _toWorkerJobs())),
+      MaterialPageRoute(
+        builder: (_) => JobFeedScreen(
+          jobs: _toWorkerJobs(),
+          selectedLanguage: _language ?? 'en',
+        ),
+      ),
     );
   }
 
@@ -265,6 +270,7 @@ class _RootScreenState extends State<_RootScreen> {
           eta: source.estimatedTime,
           note: '',
           status: 'Pending',
+          selectedLanguage: _language ?? 'en',
         ),
       ),
     );
@@ -841,10 +847,11 @@ class _RootScreenState extends State<_RootScreen> {
               )
               .toList(),
           completedJobs: const <WorkHistoryJob>[],
+          selectedLanguage: _language ?? 'en',
         );
         break;
       case _TabType.chat:
-        body = const ChatListScreen();
+        body = ChatListScreen(selectedLanguage: _language ?? 'en');
         break;
       case _TabType.settings:
         body = SettingsScreen(

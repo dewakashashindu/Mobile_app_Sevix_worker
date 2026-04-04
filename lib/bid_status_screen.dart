@@ -8,6 +8,7 @@ class BidStatusScreen extends StatelessWidget {
   final String eta;
   final String note;
   final String status;
+  final String selectedLanguage;
 
   const BidStatusScreen({
     super.key,
@@ -16,7 +17,20 @@ class BidStatusScreen extends StatelessWidget {
     required this.eta,
     required this.note,
     required this.status,
+    this.selectedLanguage = 'en',
   });
+
+  String _t(String en, String si, String ta) {
+    switch (selectedLanguage) {
+      case 'si':
+        return si;
+      case 'ta':
+        return ta;
+      case 'en':
+      default:
+        return en;
+    }
+  }
 
   Color _statusColor() {
     switch (status) {
@@ -42,12 +56,26 @@ class BidStatusScreen extends StatelessWidget {
     }
   }
 
+  String _statusLabel() {
+    switch (status) {
+      case 'Accepted':
+        return _t('Accepted', 'පිළිගන්නා ලදී', 'ஏற்கப்பட்டது');
+      case 'Rejected':
+        return _t('Rejected', 'ප්‍රතික්ෂේප කරන ලදී', 'நிராகரிக்கப்பட்டது');
+      case 'Pending':
+      default:
+        return _t('Pending', 'පොරොත්තු', 'நிலுவையில்');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final color = _statusColor();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Bid Status')),
+      appBar: AppBar(
+        title: Text(_t('Bid Status', 'ලංසු තත්ත්වය', 'ஏலம் நிலை')),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -66,12 +94,16 @@ class BidStatusScreen extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Current Bid Status',
+                        Text(
+                          _t(
+                            'Current Bid Status',
+                            'වර්තමාන ලංසු තත්ත්වය',
+                            'தற்போதைய ஏல நிலை',
+                          ),
                           style: TextStyle(color: Colors.black54),
                         ),
                         Text(
-                          status,
+                          _statusLabel(),
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
@@ -102,11 +134,14 @@ class BidStatusScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text('Your Bid: Rs. $bidAmount'),
+                    Text(
+                      '${_t('Your Bid', 'ඔබගේ ලංසුව', 'உங்கள் ஏலம்')}: Rs. $bidAmount',
+                    ),
                     const SizedBox(height: 4),
-                    Text('ETA: $eta'),
+                    Text('${_t('ETA', 'ETA', 'ETA')}: $eta'),
                     const SizedBox(height: 4),
-                    if (note.isNotEmpty) Text('Note: $note'),
+                    if (note.isNotEmpty)
+                      Text('${_t('Note', 'සටහන', 'குறிப்பு')}: $note'),
                   ],
                 ),
               ),
@@ -118,7 +153,13 @@ class BidStatusScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.of(context).popUntil((route) => route.isFirst);
                 },
-                child: const Text('Back To Home'),
+                child: Text(
+                  _t(
+                    'Back To Home',
+                    'මුල් පිටුවට යන්න',
+                    'முகப்புக்கு திரும்பு',
+                  ),
+                ),
               ),
             ),
           ],

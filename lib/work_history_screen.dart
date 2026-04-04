@@ -22,12 +22,26 @@ class WorkHistoryJob {
 class WorkHistoryScreen extends StatelessWidget {
   final List<WorkHistoryJob> ongoingJobs;
   final List<WorkHistoryJob> completedJobs;
+  final String selectedLanguage;
 
   const WorkHistoryScreen({
     super.key,
     required this.ongoingJobs,
     required this.completedJobs,
+    this.selectedLanguage = 'en',
   });
+
+  String _t(String en, String si, String ta) {
+    switch (selectedLanguage) {
+      case 'si':
+        return si;
+      case 'ta':
+        return ta;
+      case 'en':
+      default:
+        return en;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,20 +50,39 @@ class WorkHistoryScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: const Color(0xFFF3F6FC),
         appBar: AppBar(
-          title: const Text('Work History'),
-          bottom: const TabBar(
+          title: Text(_t('Work History', 'වැඩ ඉතිහාසය', 'வேலை வரலாறு')),
+          bottom: TabBar(
             tabs: [
-              Tab(text: 'Ongoing Jobs'),
-              Tab(text: 'Completed Jobs'),
+              Tab(
+                text: _t(
+                  'Ongoing Jobs',
+                  'දැනට සිදු වන වැඩ',
+                  'நடைபெறும் வேலைகள்',
+                ),
+              ),
+              Tab(text: _t('Completed Jobs', 'නිම කළ වැඩ', 'முடிந்த வேலைகள்')),
             ],
           ),
         ),
         body: TabBarView(
           children: [
-            _JobListTab(jobs: ongoingJobs, emptyText: 'No ongoing work'),
+            _JobListTab(
+              jobs: ongoingJobs,
+              emptyText: _t(
+                'No ongoing work',
+                'දැනට සිදු වන වැඩ නොමැත',
+                'நடைபெறும் வேலை இல்லை',
+              ),
+              selectedLanguage: selectedLanguage,
+            ),
             _JobListTab(
               jobs: completedJobs,
-              emptyText: 'No completed jobs yet',
+              emptyText: _t(
+                'No completed jobs yet',
+                'තවම නිම කළ වැඩ නොමැත',
+                'இன்னும் முடிந்த வேலை இல்லை',
+              ),
+              selectedLanguage: selectedLanguage,
             ),
           ],
         ),
@@ -61,14 +94,31 @@ class WorkHistoryScreen extends StatelessWidget {
 class _JobListTab extends StatefulWidget {
   final List<WorkHistoryJob> jobs;
   final String emptyText;
+  final String selectedLanguage;
 
-  const _JobListTab({required this.jobs, required this.emptyText});
+  const _JobListTab({
+    required this.jobs,
+    required this.emptyText,
+    required this.selectedLanguage,
+  });
 
   @override
   State<_JobListTab> createState() => _JobListTabState();
 }
 
 class _JobListTabState extends State<_JobListTab> {
+  String _t(String en, String si, String ta) {
+    switch (widget.selectedLanguage) {
+      case 'si':
+        return si;
+      case 'ta':
+        return ta;
+      case 'en':
+      default:
+        return en;
+    }
+  }
+
   final ScrollController _scrollController = ScrollController();
   int _visibleCount = 8;
   bool _isLoading = true;
@@ -130,6 +180,20 @@ class _JobListTabState extends State<_JobListTab> {
     return const Color(0xFF64748B);
   }
 
+  String _statusLabel(String status) {
+    final lower = status.toLowerCase();
+    if (lower.contains('complete')) {
+      return _t('Completed', 'අවසන්', 'முடிந்தது');
+    }
+    if (lower.contains('ongoing') || lower.contains('progress')) {
+      return _t('Ongoing', 'දැනට සිදු වන', 'நடைபெறும்');
+    }
+    if (lower.contains('pending')) {
+      return _t('Pending', 'පොරොත්තු', 'நிலுவையில்');
+    }
+    return status;
+  }
+
   String _formatDate(DateTime date) {
     final day = date.day.toString().padLeft(2, '0');
     final month = date.month.toString().padLeft(2, '0');
@@ -140,163 +204,195 @@ class _JobListTabState extends State<_JobListTab> {
   @override
   Widget build(BuildContext context) {
     if (_errorType != null) {
-      return ErrorStateView(type: _errorType!, onRetry: _loadJobs);
+      return RefreshIndicator(
+        onRefresh: _loadJobs,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 18),
+          children: [
+            const SizedBox(height: 60),
+            ErrorStateView(
+              type: _errorType!,
+              onRetry: _loadJobs,
+              selectedLanguage: widget.selectedLanguage,
+            ),
+          ],
+        ),
+      );
     }
 
     if (_isLoading) {
-      return ShimmerSkeleton(
-        child: ListView.builder(
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 18),
-          itemCount: 6,
-          itemBuilder: (_, index) {
-            return Card(
-              margin: const EdgeInsets.only(bottom: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Padding(
-                padding: EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(child: SkeletonBox(height: 16)),
-                        SizedBox(width: 10),
-                        SkeletonBox(width: 72, height: 18),
-                      ],
-                    ),
-                    SizedBox(height: 10),
-                    SkeletonBox(width: 180, height: 12),
-                    SizedBox(height: 10),
-                    Row(
-                      children: [
-                        SkeletonBox(width: 70, height: 12),
-                        Spacer(),
-                        SkeletonBox(width: 80, height: 12),
-                      ],
-                    ),
-                  ],
+      return RefreshIndicator(
+        onRefresh: _loadJobs,
+        child: ShimmerSkeleton(
+          child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 18),
+            itemCount: 6,
+            itemBuilder: (_, index) {
+              return Card(
+                margin: const EdgeInsets.only(bottom: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
                 ),
-              ),
-            );
-          },
+                child: const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(child: SkeletonBox(height: 16)),
+                          SizedBox(width: 10),
+                          SkeletonBox(width: 72, height: 18),
+                        ],
+                      ),
+                      SizedBox(height: 10),
+                      SkeletonBox(width: 180, height: 12),
+                      SizedBox(height: 10),
+                      Row(
+                        children: [
+                          SkeletonBox(width: 70, height: 12),
+                          Spacer(),
+                          SkeletonBox(width: 80, height: 12),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
         ),
       );
     }
 
     if (widget.jobs.isEmpty) {
-      return Center(
-        child: Text(
-          widget.emptyText,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF64748B),
-          ),
+      return RefreshIndicator(
+        onRefresh: _loadJobs,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 18),
+          children: [
+            const SizedBox(height: 80),
+            Center(
+              child: Text(
+                widget.emptyText,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF64748B),
+                ),
+              ),
+            ),
+          ],
         ),
       );
     }
 
     final visibleJobs = widget.jobs.take(_visibleCount).toList();
 
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 18),
-      itemCount: visibleJobs.length,
-      itemBuilder: (context, index) {
-        final job = visibleJobs[index];
-        final statusColor = _statusColor(job.status);
+    return RefreshIndicator(
+      onRefresh: _loadJobs,
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        controller: _scrollController,
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 18),
+        itemCount: visibleJobs.length,
+        itemBuilder: (context, index) {
+          final job = visibleJobs[index];
+          final statusColor = _statusColor(job.status);
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 10),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        job.jobTitle,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF0F172A),
+          return Card(
+            margin: const EdgeInsets.only(bottom: 10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          job.jobTitle,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF0F172A),
+                          ),
                         ),
                       ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          _statusLabel(job.status),
+                          style: TextStyle(
+                            color: statusColor,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${_t('Customer', 'පාරිභෝගිකයා', 'வாடிக்கையாளர்')}: ${job.customerName}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF334155),
+                      fontWeight: FontWeight.w500,
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.calendar_month_outlined,
+                        size: 16,
+                        color: Color(0xFF64748B),
                       ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(999),
+                      const SizedBox(width: 5),
+                      Text(
+                        _formatDate(job.date),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                        ),
                       ),
-                      child: Text(
-                        job.status,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: 11,
+                      const Spacer(),
+                      const Icon(
+                        Icons.account_balance_wallet_outlined,
+                        size: 16,
+                        color: Color(0xFF0F172A),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        job.earnings,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF0F172A),
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Customer: ${job.customerName}',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF334155),
-                    fontWeight: FontWeight.w500,
+                    ],
                   ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.calendar_month_outlined,
-                      size: 16,
-                      color: Color(0xFF64748B),
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      _formatDate(job.date),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF64748B),
-                      ),
-                    ),
-                    const Spacer(),
-                    const Icon(
-                      Icons.account_balance_wallet_outlined,
-                      size: 16,
-                      color: Color(0xFF0F172A),
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      job.earnings,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF0F172A),
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

@@ -32,6 +32,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String _countryCode = '+94';
   String _experienceYears = '';
   double _serviceRadius = 5;
+  bool _submitted = false;
+
+  String? _nameError;
+  String? _emailError;
+  String? _telephoneError;
+  String? _dateOfBirthError;
+  String? _addressError;
+  String? _cityError;
+  String? _nationalIdError;
+  String? _experienceError;
+  String? _workerTypesError;
+  String? _bioError;
 
   final List<Map<String, String>> _countryCodes = const [
     {'code': '+94', 'label': '🇱🇰 +94'},
@@ -148,6 +160,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _save() {
+    setState(() {
+      _submitted = true;
+    });
+    if (!_validateForm()) {
+      return;
+    }
+
     final updated = widget.initialData.copyWith(
       fullName: _nameController.text.trim(),
       email: _emailController.text.trim(),
@@ -167,6 +186,62 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     Navigator.of(context).pop();
   }
 
+  bool _validateForm() {
+    final email = _emailController.text.trim();
+    final phone = _telephoneController.text.trim();
+    final dob = _dateOfBirthController.text.trim();
+
+    final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+    final phoneRegex = RegExp(r'^\d{7,15}$');
+    final dobRegex = RegExp(r'^\d{4}-\d{2}-\d{2}$');
+
+    _nameError = _nameController.text.trim().isEmpty
+        ? 'Full name is required'
+        : null;
+    _emailError = email.isEmpty
+        ? 'Email is required'
+        : (!emailRegex.hasMatch(email) ? 'Enter a valid email address' : null);
+    _telephoneError = phone.isEmpty
+        ? 'Telephone number is required'
+        : (!phoneRegex.hasMatch(phone) ? 'Enter a valid phone number' : null);
+    _dateOfBirthError = dob.isEmpty
+        ? 'Date of birth is required'
+        : (!dobRegex.hasMatch(dob) ? 'Use format YYYY-MM-DD' : null);
+    _addressError = _addressController.text.trim().isEmpty
+        ? 'Address is required'
+        : null;
+    _cityError = _cityController.text.trim().isEmpty
+        ? 'City is required'
+        : null;
+    _nationalIdError = _nationalIdController.text.trim().isEmpty
+        ? 'National ID/License is required'
+        : null;
+    _experienceError = _experienceYears.trim().isEmpty
+        ? 'Select years of experience'
+        : null;
+    _workerTypesError = _workerTypes.isEmpty
+        ? 'Select at least one service type'
+        : null;
+    _bioError = _bioController.text.trim().isEmpty
+        ? 'Brief description is required'
+        : null;
+
+    setState(() {});
+
+    return [
+      _nameError,
+      _emailError,
+      _telephoneError,
+      _dateOfBirthError,
+      _addressError,
+      _cityError,
+      _nationalIdError,
+      _experienceError,
+      _workerTypesError,
+      _bioError,
+    ].every((e) => e == null);
+  }
+
   Widget _input(
     String label,
     TextEditingController controller, {
@@ -175,24 +250,49 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     Widget? suffixIcon,
     bool readOnly = false,
     VoidCallback? onTap,
+    String? errorText,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: TextField(
-        controller: controller,
-        maxLines: maxLines,
-        keyboardType: keyboardType,
-        readOnly: readOnly,
-        onTap: onTap,
-        onChanged: (_) => setState(() {}),
-        decoration: InputDecoration(
-          labelText: label,
-          floatingLabelBehavior: FloatingLabelBehavior.always,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          filled: true,
-          fillColor: Colors.white,
-          suffixIcon: suffixIcon,
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: controller,
+            maxLines: maxLines,
+            keyboardType: keyboardType,
+            readOnly: readOnly,
+            onTap: onTap,
+            onChanged: (_) {
+              if (_submitted) {
+                _validateForm();
+              } else {
+                setState(() {});
+              }
+            },
+            decoration: InputDecoration(
+              labelText: label,
+              floatingLabelBehavior: FloatingLabelBehavior.always,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              suffixIcon: suffixIcon,
+            ),
+          ),
+          if (errorText != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              errorText,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFFB42318),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -290,11 +390,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   : 'தனிப்பட்ட தகவல்',
               highlightIncomplete: _isPersonalIncomplete,
               children: [
-                _input('Full Name', _nameController),
+                _input('Full Name', _nameController, errorText: _nameError),
                 _input(
                   'Email',
                   _emailController,
                   keyboardType: TextInputType.emailAddress,
+                  errorText: _emailError,
                 ),
                 Row(
                   children: [
@@ -332,6 +433,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         'Telephone Number',
                         _telephoneController,
                         keyboardType: TextInputType.phone,
+                        errorText: _telephoneError,
                       ),
                     ),
                   ],
@@ -342,9 +444,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   readOnly: true,
                   onTap: _pickDateOfBirth,
                   suffixIcon: const Icon(Icons.calendar_today_outlined),
+                  errorText: _dateOfBirthError,
                 ),
-                _input('Address', _addressController),
-                _input('City/Location', _cityController),
+                _input('Address', _addressController, errorText: _addressError),
+                _input('City/Location', _cityController, errorText: _cityError),
               ],
             ),
             _sectionCard(
@@ -355,7 +458,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   : 'தொழில்முறை விவரங்கள்',
               highlightIncomplete: _isProfessionalIncomplete,
               children: [
-                _input('National ID/License', _nationalIdController),
+                _input(
+                  'National ID/License',
+                  _nationalIdController,
+                  errorText: _nationalIdError,
+                ),
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: DropdownButtonFormField<String>(
@@ -382,11 +489,31 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     onChanged: (value) {
                       setState(() {
                         _experienceYears = value ?? '';
+                        if (_submitted) {
+                          _validateForm();
+                        }
                       });
                     },
                   ),
                 ),
-                _input('Brief Description', _bioController, maxLines: 3),
+                if (_experienceError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Text(
+                      _experienceError!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFFB42318),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                _input(
+                  'Brief Description',
+                  _bioController,
+                  maxLines: 3,
+                  errorText: _bioError,
+                ),
                 const SizedBox(height: 4),
                 Text(
                   'Service Types',
@@ -418,10 +545,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             : const Color(0xFFD9E0EC),
                       ),
                       label: Text(_workerTypeLabel(id)),
-                      onSelected: (_) => _toggleWorkerType(id),
+                      onSelected: (_) {
+                        _toggleWorkerType(id);
+                        if (_submitted) {
+                          _validateForm();
+                        }
+                      },
                     );
                   }).toList(),
                 ),
+                if (_workerTypesError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      _workerTypesError!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFFB42318),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
