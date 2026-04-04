@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'bid_status_screen.dart';
+import 'error_state_view.dart';
 import 'job_detail_screen.dart';
+import 'shimmer_skeleton.dart';
 import 'worker_job.dart';
 
 class JobFeedScreen extends StatefulWidget {
@@ -20,6 +22,35 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
   RangeValues _budgetRange = const RangeValues(1000, 10000);
   String _selectedCategory = 'All';
   String _selectedUrgency = 'All';
+  bool _isLoading = true;
+  LoadErrorType? _errorType;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadJobs();
+  }
+
+  Future<void> _loadJobs() async {
+    setState(() {
+      _isLoading = true;
+      _errorType = null;
+    });
+
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 900));
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorType = LoadErrorType.data;
+      });
+    }
+  }
 
   List<String> get _categories {
     final set = <String>{'All', ...widget.jobs.map((e) => e.category)};
@@ -39,6 +70,27 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
 
       return distanceMatch && budgetMatch && categoryMatch && urgencyMatch;
     }).toList();
+  }
+
+  double _recommendationScore(WorkerJob job) {
+    final urgencyBoost = switch (job.urgency) {
+      'high' => 30.0,
+      'medium' => 20.0,
+      _ => 10.0,
+    };
+
+    final distanceScore = (30 - job.distanceKm).clamp(0, 30);
+    final budgetScore = (job.budgetLkr / 1000).clamp(0, 40).toDouble();
+
+    return urgencyBoost + distanceScore + budgetScore;
+  }
+
+  List<WorkerJob> get _recommendedJobs {
+    final sorted = List<WorkerJob>.from(_filteredJobs)
+      ..sort(
+        (a, b) => _recommendationScore(b).compareTo(_recommendationScore(a)),
+      );
+    return sorted.take(3).toList();
   }
 
   Color _urgencyColor(String urgency) {
@@ -82,6 +134,7 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
   @override
   Widget build(BuildContext context) {
     final jobs = _filteredJobs;
+    final recommendedIds = _recommendedJobs.map((e) => e.id).toSet();
 
     return Scaffold(
       appBar: AppBar(
@@ -190,9 +243,96 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
               ],
             ),
           ),
+          if (!_isLoading && _errorType == null && _recommendedJobs.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: _recommendedJobs
+                      .map(
+                        (job) => Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFECF3FF),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(color: const Color(0xFFCFE0FF)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.auto_awesome,
+                                size: 14,
+                                color: Color(0xFF1D4ED8),
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                '${job.category} • Recommended for you',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF1E3A8A),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+            ),
           const SizedBox(height: 6),
           Expanded(
-            child: jobs.isEmpty
+            child: _isLoading
+                ? ShimmerSkeleton(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+                      itemCount: 6,
+                      itemBuilder: (_, index) {
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Padding(
+                            padding: EdgeInsets.all(14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    SkeletonBox(width: 190, height: 16),
+                                    Spacer(),
+                                    SkeletonBox(width: 56, height: 20),
+                                  ],
+                                ),
+                                SizedBox(height: 10),
+                                SkeletonBox(width: 220, height: 12),
+                                SizedBox(height: 8),
+                                SkeletonBox(width: 180, height: 12),
+                                SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    SkeletonBox(width: 90, height: 12),
+                                    Spacer(),
+                                    SkeletonBox(width: 80, height: 12),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  )
+                : _errorType != null
+                ? ErrorStateView(type: _errorType!, onRetry: _loadJobs)
+                : jobs.isEmpty
                 ? const Center(
                     child: Text('No matching jobs. Try changing filters.'),
                   )
@@ -201,11 +341,20 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
                     itemCount: jobs.length,
                     itemBuilder: (context, index) {
                       final job = jobs[index];
+                      final isRecommended = recommendedIds.contains(job.id);
                       return Card(
                         margin: const EdgeInsets.only(bottom: 10),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
+                          side: BorderSide(
+                            color: isRecommended
+                                ? const Color(0xFFC7DAFF)
+                                : Colors.transparent,
+                          ),
                         ),
+                        color: isRecommended
+                            ? const Color(0xFFF8FBFF)
+                            : Colors.white,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(14),
                           onTap: () {
@@ -253,6 +402,30 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
                                     ),
                                   ],
                                 ),
+                                if (isRecommended)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFEAF2FF),
+                                        borderRadius: BorderRadius.circular(
+                                          999,
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        'Recommended for you',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF1D4ED8),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 const SizedBox(height: 8),
                                 Text(job.location),
                                 const SizedBox(height: 4),

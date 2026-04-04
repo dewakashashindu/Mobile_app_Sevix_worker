@@ -184,6 +184,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         keyboardType: keyboardType,
         readOnly: readOnly,
         onTap: onTap,
+        onChanged: (_) => setState(() {}),
         decoration: InputDecoration(
           labelText: label,
           floatingLabelBehavior: FloatingLabelBehavior.always,
@@ -196,10 +197,38 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _sectionCard({required String title, required List<Widget> children}) {
+  bool get _isPersonalIncomplete {
+    return _nameController.text.trim().isEmpty ||
+        _emailController.text.trim().isEmpty ||
+        _telephoneController.text.trim().isEmpty ||
+        _dateOfBirthController.text.trim().isEmpty ||
+        _addressController.text.trim().isEmpty ||
+        _cityController.text.trim().isEmpty;
+  }
+
+  bool get _isProfessionalIncomplete {
+    return _nationalIdController.text.trim().isEmpty ||
+        _experienceYears.trim().isEmpty ||
+        _workerTypes.isEmpty ||
+        _bioController.text.trim().isEmpty;
+  }
+
+  Widget _sectionCard({
+    required String title,
+    required List<Widget> children,
+    bool highlightIncomplete = false,
+  }) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: highlightIncomplete
+              ? const Color(0xFFFDB022)
+              : Colors.transparent,
+          width: 1.2,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -207,8 +236,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           children: [
             Text(
               title,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: highlightIncomplete
+                    ? const Color(0xFFB54708)
+                    : const Color(0xFF0F172A),
+              ),
             ),
+            if (highlightIncomplete)
+              const Padding(
+                padding: EdgeInsets.only(top: 4),
+                child: Text(
+                  'Incomplete section',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFFB54708),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             const SizedBox(height: 10),
             ...children,
           ],
@@ -241,6 +288,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   : _language == 'si'
                   ? 'පුද්ගලික තොරතුරු'
                   : 'தனிப்பட்ட தகவல்',
+              highlightIncomplete: _isPersonalIncomplete,
               children: [
                 _input('Full Name', _nameController),
                 _input(
@@ -305,6 +353,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   : _language == 'si'
                   ? 'වෘත්තීය තොරතුරු'
                   : 'தொழில்முறை விவரங்கள்',
+              highlightIncomplete: _isProfessionalIncomplete,
               children: [
                 _input('National ID/License', _nationalIdController),
                 Padding(

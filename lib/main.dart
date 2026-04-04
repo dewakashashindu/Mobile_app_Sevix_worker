@@ -11,6 +11,8 @@ import 'bid_status_screen.dart';
 import 'wallet_screen.dart';
 import 'notifications_screen.dart';
 import 'worker_profile_data.dart';
+import 'chat_list_screen.dart';
+import 'work_history_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -537,6 +539,18 @@ class _RootScreenState extends State<_RootScreen> {
                       ],
                     ),
                     const SizedBox(height: 14),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Availability toggle',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: textSecondary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     SizedBox(
                       width: double.infinity,
                       child: SegmentedButton<bool>(
@@ -544,12 +558,12 @@ class _RootScreenState extends State<_RootScreen> {
                           ButtonSegment<bool>(
                             value: true,
                             icon: Icon(Icons.wifi_tethering_rounded),
-                            label: Text('Online'),
+                            label: Text('Available'),
                           ),
                           ButtonSegment<bool>(
                             value: false,
                             icon: Icon(Icons.pause_circle_outline),
-                            label: Text('Offline'),
+                            label: Text('Unavailable'),
                           ),
                         ],
                         selected: {_isOnline},
@@ -814,10 +828,23 @@ class _RootScreenState extends State<_RootScreen> {
         );
         break;
       case _TabType.bookings:
-        body = const Center(child: Text('Work History (placeholder)'));
+        body = WorkHistoryScreen(
+          ongoingJobs: _jobRequests
+              .map(
+                (job) => WorkHistoryJob(
+                  jobTitle: '${job.serviceType} Job',
+                  customerName: job.customerName,
+                  date: DateTime.now().subtract(const Duration(days: 1)),
+                  earnings: job.payment,
+                  status: 'Ongoing',
+                ),
+              )
+              .toList(),
+          completedJobs: const <WorkHistoryJob>[],
+        );
         break;
       case _TabType.chat:
-        body = const Center(child: Text('Chat list (placeholder)'));
+        body = const ChatListScreen();
         break;
       case _TabType.settings:
         body = SettingsScreen(
