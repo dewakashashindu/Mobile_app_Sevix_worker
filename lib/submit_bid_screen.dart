@@ -56,6 +56,12 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
     return suggested;
   }
 
+  (int, int) get _competitiveRange {
+    final min = (widget.job.budgetLkr * 0.9).round();
+    final max = (widget.job.budgetLkr * 1.12).round();
+    return (min, max);
+  }
+
   Future<void> _showSuccessCheckAnimation() async {
     await showGeneralDialog<void>(
       context: context,
@@ -184,6 +190,8 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final range = _competitiveRange;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_t('Submit Bid', 'ලංසුව යොමු කරන්න', 'ஏலம் சமர்ப்பி')),
@@ -236,7 +244,7 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '${_t('Suggested bid price', 'නිර්දේශිත ලංසු මිල', 'பரிந்துரைக்கப்பட்ட ஏல விலை')}: Rs. $_suggestedBidPrice',
+                      '${_t('Competitive Range', 'තරඟකාරී පරාසය', 'போட்டித்திறன் வரம்பு')}: Rs. ${range.$1} - Rs. ${range.$2}\n${_t('Suggested bid', 'නිර්දේශිත ලංසුව', 'பரிந்துரைக்கப்பட்ட ஏலம்')}: Rs. $_suggestedBidPrice',
                       style: const TextStyle(
                         color: Color(0xFF1E3A8A),
                         fontWeight: FontWeight.w700,

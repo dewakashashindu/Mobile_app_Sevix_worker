@@ -13,6 +13,9 @@ import 'notifications_screen.dart';
 import 'worker_profile_data.dart';
 import 'chat_list_screen.dart';
 import 'work_history_screen.dart';
+import 'professional_profile_screen.dart';
+import 'job_execution_screen.dart';
+import 'payment_history_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -127,6 +130,7 @@ class _RootScreenState extends State<_RootScreen> {
   int _serviceRadius = 5;
   double _rating = 4.8;
   int _activeJobsCount = 2;
+  String _earningsWindow = 'today';
 
   late List<JobRequest> _jobRequests;
   late EarningsData _earnings;
@@ -241,6 +245,21 @@ class _RootScreenState extends State<_RootScreen> {
     }
   }
 
+  bool _matchesWorkerSkill(WorkerJob job) {
+    final type = _workerType.toLowerCase();
+    final category = job.category.toLowerCase();
+    if (category.contains(type) || type.contains(category)) {
+      return true;
+    }
+
+    if (type.contains('plumber') && category.contains('plumb')) return true;
+    if (type.contains('electric') && category.contains('electric')) return true;
+    if (type.contains('carpenter') && category.contains('carpent')) return true;
+    if (type.contains('painter') && category.contains('paint')) return true;
+    if (type.contains('mechanic') && category.contains('mechanic')) return true;
+    return false;
+  }
+
   void _openJobFeed() {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -293,6 +312,43 @@ class _RootScreenState extends State<_RootScreen> {
         builder: (_) => NotificationsScreen(
           selectedLanguage: _language ?? 'en',
           onBack: () => Navigator.of(context).pop(),
+        ),
+      ),
+    );
+  }
+
+  void _openProfilePortfolio() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) =>
+            ProfessionalProfileScreen(selectedLanguage: _language ?? 'en'),
+      ),
+    );
+  }
+
+  void _openPaymentHistory() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) =>
+            PaymentHistoryScreen(selectedLanguage: _language ?? 'en'),
+      ),
+    );
+  }
+
+  void _openActiveJobExecution() {
+    final jobs = _toWorkerJobs();
+    if (jobs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No active job available right now.')),
+      );
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => JobExecutionScreen(
+          job: jobs.first,
+          selectedLanguage: _language ?? 'en',
         ),
       ),
     );
@@ -372,6 +428,15 @@ class _RootScreenState extends State<_RootScreen> {
     final textPrimary = theme.textTheme.bodyLarge?.color ?? Colors.black87;
     final textSecondary =
         theme.textTheme.bodyMedium?.color?.withOpacity(0.7) ?? Colors.black54;
+    final workerJobs = _toWorkerJobs();
+    final matchingLeads = workerJobs
+        .where((job) => job.distanceKm >= 1 && job.distanceKm <= 50)
+        .where(_matchesWorkerSkill)
+        .toList();
+    final activeJob = workerJobs.isNotEmpty ? workerJobs.first : null;
+    final earningsValue = _earningsWindow == 'today'
+        ? _earnings.today
+        : _earnings.week;
 
     Widget body;
     switch (_activeTab) {
@@ -512,6 +577,130 @@ class _RootScreenState extends State<_RootScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.map_outlined,
+                                  color: Color(0xFF0B1533),
+                                ),
+                                const SizedBox(width: 8),
+                                const Expanded(
+                                  child: Text(
+                                    'Visible on Customer Map',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ),
+                                Switch(
+                                  value: _isOnline,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _isOnline = value;
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Container(
+                              height: 120,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFFDCE8FF),
+                                    Color(0xFFF3F8FF),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                border: Border.all(
+                                  color: const Color(0xFFC9D8F8),
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  _isOnline
+                                      ? 'Online and discoverable for nearby customers'
+                                      : 'Offline - hidden from customer map',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: _isOnline
+                                        ? const Color(0xFF0B1533)
+                                        : const Color(0xFFB91C1C),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Earnings Summary',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            SegmentedButton<String>(
+                              segments: const [
+                                ButtonSegment<String>(
+                                  value: 'today',
+                                  label: Text('Today'),
+                                ),
+                                ButtonSegment<String>(
+                                  value: 'week',
+                                  label: Text('This Week'),
+                                ),
+                              ],
+                              selected: {_earningsWindow},
+                              onSelectionChanged: (selection) {
+                                setState(() {
+                                  _earningsWindow = selection.first;
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              'Rs. $earningsValue',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF0B1533),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     CircleAvatar(
                       radius: 42,
                       backgroundColor: theme.dividerColor,
@@ -545,75 +734,6 @@ class _RootScreenState extends State<_RootScreen> {
                       ],
                     ),
                     const SizedBox(height: 14),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Availability toggle',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: textSecondary,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      child: SegmentedButton<bool>(
-                        segments: const [
-                          ButtonSegment<bool>(
-                            value: true,
-                            icon: Icon(Icons.wifi_tethering_rounded),
-                            label: Text('Available'),
-                          ),
-                          ButtonSegment<bool>(
-                            value: false,
-                            icon: Icon(Icons.pause_circle_outline),
-                            label: Text('Unavailable'),
-                          ),
-                        ],
-                        selected: {_isOnline},
-                        showSelectedIcon: false,
-                        style: ButtonStyle(
-                          side: WidgetStateProperty.resolveWith((states) {
-                            final selected = states.contains(
-                              WidgetState.selected,
-                            );
-                            return BorderSide(
-                              color: selected
-                                  ? const Color(0xFF0B1533)
-                                  : theme.dividerColor,
-                              width: selected ? 1.6 : 1.0,
-                            );
-                          }),
-                          foregroundColor: WidgetStateProperty.resolveWith((
-                            states,
-                          ) {
-                            return states.contains(WidgetState.selected)
-                                ? const Color(0xFF0B1533)
-                                : textSecondary;
-                          }),
-                          backgroundColor: WidgetStateProperty.resolveWith((
-                            states,
-                          ) {
-                            return states.contains(WidgetState.selected)
-                                ? const Color(0xFFEAF0FF)
-                                : Colors.white;
-                          }),
-                          textStyle: const WidgetStatePropertyAll(
-                            TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                          padding: const WidgetStatePropertyAll(
-                            EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
-                        onSelectionChanged: (selection) {
-                          setState(() {
-                            _isOnline = selection.first;
-                          });
-                        },
-                      ),
-                    ),
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
@@ -641,6 +761,69 @@ class _RootScreenState extends State<_RootScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
+                        onPressed: _openProfilePortfolio,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF7C3AED),
+                          side: const BorderSide(
+                            color: Color(0xFF7C3AED),
+                            width: 1.6,
+                          ),
+                          backgroundColor: const Color(0xFFF7F3FF),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: const Icon(Icons.verified_user_outlined),
+                        label: const Text(
+                          'Open Profile & Portfolio',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    if (activeJob != null)
+                      SizedBox(
+                        width: double.infinity,
+                        child: Card(
+                          color: const Color(0xFFEFF6FF),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Active Job In Progress',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF0B1533),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${activeJob.category} - ${activeJob.customerName}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                ElevatedButton.icon(
+                                  onPressed: _openActiveJobExecution,
+                                  icon: const Icon(Icons.play_circle_outline),
+                                  label: const Text('Open Active Job'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
                         onPressed: _openBidStatus,
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFF0B1533),
@@ -662,6 +845,68 @@ class _RootScreenState extends State<_RootScreen> {
                       ),
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'New Leads Feed (1-50 km)',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        if (matchingLeads.isEmpty)
+                          const Text(
+                            'No nearby leads match your current skills right now.',
+                          ),
+                        ...matchingLeads
+                            .take(3)
+                            .map(
+                              (lead) => ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: const CircleAvatar(
+                                  backgroundColor: Color(0xFFE2E8F0),
+                                  child: Icon(Icons.campaign_outlined),
+                                ),
+                                title: Text(
+                                  '${lead.category} - ${lead.customerName}',
+                                ),
+                                subtitle: Text(
+                                  '${lead.location} • ${lead.distanceKm.toStringAsFixed(1)} km',
+                                ),
+                                trailing: Text(
+                                  'Rs. ${lead.budgetLkr}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: _openJobFeed,
+                            icon: const Icon(Icons.arrow_forward),
+                            label: const Text('View All Leads'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -757,22 +1002,44 @@ class _RootScreenState extends State<_RootScreen> {
                             icon: Icons.work_history_outlined,
                             color: const Color(0xFF10B981),
                             onTap: () {
-                              setState(() {
-                                _activeTab = _TabType.bookings;
-                              });
+                              _openActiveJobExecution();
                             },
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: _shortcutCard(
+                            title: 'Profile',
+                            subtitle: 'Skills & gallery',
+                            icon: Icons.verified_user_outlined,
+                            color: const Color(0xFF7C3AED),
+                            onTap: () {
+                              _openProfilePortfolio();
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _shortcutCard(
                             title: 'Wallet',
                             subtitle: 'Balance',
                             icon: Icons.account_balance_wallet_outlined,
                             color: const Color(0xFFF59E0B),
-                            onTap: () {
-                              _openWallet();
-                            },
+                            onTap: _openWallet,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _shortcutCard(
+                            title: 'Payments',
+                            subtitle: 'Escrow status',
+                            icon: Icons.payments_outlined,
+                            color: const Color(0xFF0EA5E9),
+                            onTap: _openPaymentHistory,
                           ),
                         ),
                       ],

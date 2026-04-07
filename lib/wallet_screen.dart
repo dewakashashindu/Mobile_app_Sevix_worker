@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'payment_history_screen.dart';
 import 'withdrawal_request_screen.dart';
 
 class WalletScreen extends StatefulWidget {
@@ -367,6 +368,28 @@ class _WalletScreenState extends State<WalletScreen> {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              PaymentHistoryScreen(selectedLanguage: _language),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.history),
+                    label: Text(
+                      _language == 'si'
+                          ? 'Escrow ගෙවීම් ඉතිහාසය'
+                          : _language == 'ta'
+                          ? 'Escrow கட்டண வரலாறு'
+                          : 'Escrow Payment History',
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 SizedBox(
