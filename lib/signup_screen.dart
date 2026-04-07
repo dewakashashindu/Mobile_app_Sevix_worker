@@ -1,12 +1,101 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'worker_profile_data.dart';
 
-class SignupScreen extends StatefulWidget {
-  final String selectedLanguage; // 'en', 'si', 'ta'
+class RegistrationState {
+  final int step;
+  final String fullName;
+  final String telephone;
+  final String nationalId;
+  final String primaryTrade;
+  final String yearsOfExperience;
+  final String? idFrontPath;
+  final String? idBackPath;
+  final String? selfiePath;
+
+  const RegistrationState({
+    this.step = 0,
+    this.fullName = '',
+    this.telephone = '',
+    this.nationalId = '',
+    this.primaryTrade = '',
+    this.yearsOfExperience = '',
+    this.idFrontPath,
+    this.idBackPath,
+    this.selfiePath,
+  });
+
+  RegistrationState copyWith({
+    int? step,
+    String? fullName,
+    String? telephone,
+    String? nationalId,
+    String? primaryTrade,
+    String? yearsOfExperience,
+    String? idFrontPath,
+    String? idBackPath,
+    String? selfiePath,
+    bool clearFront = false,
+    bool clearBack = false,
+    bool clearSelfie = false,
+  }) {
+    return RegistrationState(
+      step: step ?? this.step,
+      fullName: fullName ?? this.fullName,
+      telephone: telephone ?? this.telephone,
+      nationalId: nationalId ?? this.nationalId,
+      primaryTrade: primaryTrade ?? this.primaryTrade,
+      yearsOfExperience: yearsOfExperience ?? this.yearsOfExperience,
+      idFrontPath: clearFront ? null : (idFrontPath ?? this.idFrontPath),
+      idBackPath: clearBack ? null : (idBackPath ?? this.idBackPath),
+      selfiePath: clearSelfie ? null : (selfiePath ?? this.selfiePath),
+    );
+  }
+}
+
+class RegistrationNotifier extends StateNotifier<RegistrationState> {
+  RegistrationNotifier() : super(const RegistrationState());
+
+  void setStep(int step) => state = state.copyWith(step: step);
+  void setFullName(String value) => state = state.copyWith(fullName: value);
+  void setTelephone(String value) => state = state.copyWith(telephone: value);
+  void setNationalId(String value) => state = state.copyWith(nationalId: value);
+  void setPrimaryTrade(String value) =>
+      state = state.copyWith(primaryTrade: value);
+  void setYearsOfExperience(String value) =>
+      state = state.copyWith(yearsOfExperience: value);
+  void setFrontImage(String path) => state = state.copyWith(idFrontPath: path);
+  void setBackImage(String path) => state = state.copyWith(idBackPath: path);
+  void setSelfieImage(String path) => state = state.copyWith(selfiePath: path);
+
+  void clearFrontImage() => state = state.copyWith(clearFront: true);
+  void clearBackImage() => state = state.copyWith(clearBack: true);
+  void clearSelfieImage() => state = state.copyWith(clearSelfie: true);
+
+  void nextStep() {
+    if (state.step < 3) {
+      state = state.copyWith(step: state.step + 1);
+    }
+  }
+
+  void previousStep() {
+    if (state.step > 0) {
+      state = state.copyWith(step: state.step - 1);
+    }
+  }
+}
+
+final registrationProvider =
+    StateNotifierProvider<RegistrationNotifier, RegistrationState>(
+      (ref) => RegistrationNotifier(),
+    );
+
+class SignupScreen extends ConsumerStatefulWidget {
+  final String selectedLanguage;
   final ValueChanged<WorkerProfileData> onSignUpSuccess;
   final VoidCallback? onNavigateToLogin;
 
@@ -18,315 +107,116 @@ class SignupScreen extends StatefulWidget {
   });
 
   @override
-  State<SignupScreen> createState() => _SignupScreenState();
+  ConsumerState<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _SignupScreenState extends State<SignupScreen> {
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
+class _SignupScreenState extends ConsumerState<SignupScreen> {
+  final _fullNameController = TextEditingController();
   final _telephoneController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
-  final _dateOfBirthController = TextEditingController();
-  final _addressController = TextEditingController();
-  final _cityController = TextEditingController();
   final _nationalIdController = TextEditingController();
   final _experienceController = TextEditingController();
-  final _bioController = TextEditingController();
+  final _imagePicker = ImagePicker();
 
-  final ImagePicker _picker = ImagePicker();
+  bool _showStep1Errors = false;
+  bool _showStep2Errors = false;
+  bool _showStep3Errors = false;
 
-  String _countryCode = '+94';
-  String _serviceRadius = '5';
-  bool _showPassword = false;
-  bool _agreedToTerms = false;
-  String? _nicPhotoPath;
-  final Set<String> _workerTypes = <String>{};
-  bool _submitted = false;
-
-  String? _nameError;
-  String? _dobError;
-  String? _nidError;
-  String? _nicPhotoError;
-  String? _phoneError;
-  String? _emailError;
-  String? _addressError;
-  String? _passwordError;
-  String? _confirmPasswordError;
-  String? _workerTypesError;
-  String? _experienceError;
-  String? _bioError;
-  String? _cityError;
-  String? _termsError;
-
-  Map<String, Map<String, String>> get _translations => {
-    'signUp': {'en': 'Sign Up', 'si': 'ලියාපදිංචි වන්න', 'ta': 'பதிவுசெய்க'},
-    'name': {'en': 'Full Name', 'si': 'සම්පූර්ණ නම', 'ta': 'முழுப்பெயர்'},
-    'email': {'en': 'Email', 'si': 'ඊමේල්', 'ta': 'மின்னஞ்சல்'},
-    'telephone': {
-      'en': 'Telephone Number',
-      'si': 'දුරකථන අංකය',
-      'ta': 'தொலைபேசி எண்',
-    },
-    'password': {'en': 'Password', 'si': 'මුරපදය', 'ta': 'கடவுச்சொல்'},
-    'confirmPassword': {
-      'en': 'Confirm Password',
-      'si': 'මුරපදය තහවුරු කරන්න',
-      'ta': 'கடவுச்சொல்லை உறுதிப்படுத்தவும்',
-    },
-    'alreadyHaveAccount': {
-      'en': 'Already have an account?',
-      'si': 'දැනටමත් ගිණුමක් තිබේද?',
-      'ta': 'ஏற்கனவே ஒரு கணக்கு உள்ளதா?',
-    },
-    'login': {'en': 'Login', 'si': 'ඇතුල් වන්න', 'ta': 'உள்நுழைய'},
-    'createAccount': {
-      'en': 'Create Account',
-      'si': 'ගිණුමක් සාදන්න',
-      'ta': 'கணக்கை உருவாக்கவும்',
-    },
-    'signUpDescription': {
-      'en': 'Join as a service worker',
-      'si': 'සේවා සේවකයෙකු ලෙස එක්වන්න',
-      'ta': 'சேவைப் பணியாளராக இணையுங்கள்',
-    },
-    'error': {'en': 'Error', 'si': 'දෝෂයකි', 'ta': 'பிழை'},
-    'success': {'en': 'Success', 'si': 'සාර්ථකයි', 'ta': 'வெற்றி'},
-    'ok': {'en': 'OK', 'si': 'හරි', 'ta': 'சரி'},
-    'fillAllFields': {
-      'en': 'Please fill in all required fields',
-      'si': 'කරුණාකර සියලුම අවශ්‍ය ක්ෂේත්‍ර පුරවන්න',
-      'ta': 'தேவையான அனைத்து புலங்களையும் நிரப்பவும்',
-    },
-    'requiredField': {
-      'en': 'This field is required',
-      'si': 'මෙම ක්ෂේත්‍රය අවශ්‍යයි',
-      'ta': 'இந்த புலம் அவசியம்',
-    },
-    'invalidDob': {
-      'en': 'Use date format YYYY-MM-DD',
-      'si': 'දිනය YYYY-MM-DD ආකාරයෙන් දාන්න',
-      'ta': 'தேதி வடிவம் YYYY-MM-DD பயன்படுத்தவும்',
-    },
-    'invalidEmail': {
-      'en': 'Please enter a valid email address',
-      'si': 'වලංගු ඊමේල් ලිපිනයක් ඇතුළත් කරන්න',
-      'ta': 'சரியான மின்னஞ்சல் முகவரியை உள்ளிடவும்',
-    },
-    'invalidPhone': {
-      'en': 'Please enter a valid telephone number',
-      'si': 'වලංගු දුරකථන අංකයක් ඇතුළත් කරන්න',
-      'ta': 'சரியான தொலைபேசி எண்ணை உள்ளிடவும்',
-    },
-    'passwordLength': {
-      'en': 'Password must be at least 6 characters',
-      'si': 'මුරපදය අවම වශයෙන් අක්ෂර 6ක් විය යුතුය',
-      'ta': 'கடவுச்சொல் குறைந்தது 6 எழுத்துக்களாக இருக்க வேண்டும்',
-    },
-    'passwordMismatch': {
-      'en': 'Passwords do not match',
-      'si': 'මුරපද ගැලපෙන්නේ නැත',
-      'ta': 'கடவுச்சொற்கள் பொருந்தவில்லை',
-    },
-    'dateOfBirth': {
-      'en': 'Date of Birth (YYYY-MM-DD)',
-      'si': 'උපන් දිනය',
-      'ta': 'பிறந்த தேதி',
-    },
-    'address': {'en': 'Address', 'si': 'ලිපිනය', 'ta': 'முகவரி'},
-    'city': {'en': 'City/Location', 'si': 'නගරය/ස්ථානය', 'ta': 'நகரம்/இடம்'},
-    'nationalId': {
-      'en': 'National ID/License',
-      'si': 'ජාතික හැඳුනුම්පත',
-      'ta': 'தேசிய அடையாள அட்டை',
-    },
-    'workerTypes': {
-      'en': 'Service Types (Select at least one)',
-      'si': 'සේවා වර්ග',
-      'ta': 'சேவை வகைகள்',
-    },
-    'experience': {
-      'en': 'Years of Experience',
-      'si': 'අත්දැකීම් වසර',
-      'ta': 'அனுபவ ஆண்டுகள்',
-    },
-    'bio': {
-      'en': 'Brief Description',
-      'si': 'කෙටි විස්තරය',
-      'ta': 'சுருக்கமான விளக்கம்',
-    },
-    'serviceRadius': {
-      'en': 'Service Radius (km)',
-      'si': 'සේවා රේඩියස (කි.මී)',
-      'ta': 'சேவை ஆரம் (கி.மீ)',
-    },
-    'agreeToTerms': {
-      'en': 'I agree to Terms & Conditions',
-      'si': 'නියම හා කොන්දේසි වලට එකඟ වෙමි',
-      'ta': 'விதிமுறைகளுக்கு நான் ஒப்புக்கொள்கிறேன்',
-    },
-    'mustAgreeTerms': {
-      'en': 'You must agree to terms and conditions',
-      'si': 'ඔබ නියම සහ කොන්දේසි වලට එකඟ විය යුතුය',
-      'ta': 'நீங்கள் விதிமுறைகளுக்கு ஒப்புக்கொள்ள வேண்டும்',
-    },
-    'selectWorkerType': {
-      'en': 'Please select at least one service type',
-      'si': 'කරුණාකර අවම වශයෙන් එක් සේවා වර්ගයක් තෝරන්න',
-      'ta': 'குறைந்தது ஒரு சேவை வகையைத் தேர்ந்தெடுக்கவும்',
-    },
-    'personalInfo': {
-      'en': 'Personal Information',
-      'si': 'පුද්ගලික තොරතුරු',
-      'ta': 'தனிப்பட்ட தகவல்',
-    },
-    'professionalInfo': {
-      'en': 'Professional Information',
-      'si': 'වෘත්තීය තොරතුරු',
-      'ta': 'தொழில்முறை தகவல்',
-    },
-    'serviceArea': {
-      'en': 'Service Area',
-      'si': 'සේවා ප්‍රදේශය',
-      'ta': 'சேவை பகுதி',
-    },
-  };
-
-  String _t(String key) {
-    final valueForKey = _translations[key];
-    if (valueForKey == null) return key;
-    final lang = widget.selectedLanguage;
-    return valueForKey[lang] ?? valueForKey['en'] ?? key;
-  }
-
-  String _workerTypeLabel(String id) {
-    const labels = {
-      'plumber': {'en': 'Plumber', 'si': 'නළකරුවා', 'ta': 'குழாய் தொழிலாளர்'},
-      'electrician': {
-        'en': 'Electrician',
-        'si': 'විදුලි කාර්මිකයා',
-        'ta': 'மின்சார தொழிலாளர்',
-      },
-      'carpenter': {'en': 'Carpenter', 'si': 'කඩදාසි කම්කරුවා', 'ta': 'தச்சர்'},
-      'painter': {'en': 'Painter', 'si': 'චිත්ර ශිල්පියා', 'ta': 'ஓவியர்'},
-      'ac-technician': {
-        'en': 'AC Technician',
-        'si': 'AC තාක්ෂණවේදියා',
-        'ta': 'ஏசி நிபுணர்',
-      },
-      'mechanic': {'en': 'Mechanic', 'si': 'මෙෂිනිකිය', 'ta': 'மேக்கானிக்'},
-    };
-
-    final map = labels[id];
-    if (map == null) return id;
-    final lang = widget.selectedLanguage;
-    return map[lang] ?? map['en'] ?? id;
-  }
-
-  List<Map<String, String>> get _availableWorkerTypes => const [
-    {'id': 'plumber', 'icon': 'water'},
-    {'id': 'electrician', 'icon': 'bolt'},
-    {'id': 'carpenter', 'icon': 'carpenter'},
-    {'id': 'painter', 'icon': 'format_paint'},
-    {'id': 'ac-technician', 'icon': 'ac_unit'},
-    {'id': 'mechanic', 'icon': 'build'},
-  ];
-
-  final List<Map<String, String>> _countryCodes = const [
-    {'code': '+94', 'label': '🇱🇰 +94'},
-    {'code': '+91', 'label': '🇮🇳 +91'},
-    {'code': '+1', 'label': '🇺🇸 +1'},
-    {'code': '+44', 'label': '🇬🇧 +44'},
-    {'code': '+61', 'label': '🇦🇺 +61'},
+  final List<String> _tradeOptions = const [
+    'Plumber',
+    'Electrician',
+    'Carpenter',
+    'Painter',
+    'AC Technician',
+    'Mechanic',
   ];
 
   @override
+  void initState() {
+    super.initState();
+    final state = ref.read(registrationProvider);
+    _fullNameController.text = state.fullName;
+    _telephoneController.text = state.telephone;
+    _nationalIdController.text = state.nationalId;
+    _experienceController.text = state.yearsOfExperience;
+  }
+
+  @override
   void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
+    _fullNameController.dispose();
     _telephoneController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    _dateOfBirthController.dispose();
-    _addressController.dispose();
-    _cityController.dispose();
     _nationalIdController.dispose();
     _experienceController.dispose();
-    _bioController.dispose();
     super.dispose();
   }
 
-  Future<void> _pickNicFromGallery() async {
-    final result = await _picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 80,
-      maxWidth: 1600,
-    );
-    if (result != null) {
-      setState(() {
-        _nicPhotoPath = result.path;
-      });
-      _onFieldChanged();
-    }
+  bool _validateStep1(RegistrationState state) {
+    final exp = int.tryParse(state.yearsOfExperience);
+    final phoneRegex = RegExp(r'^\d{7,15}$');
+    return state.fullName.trim().isNotEmpty &&
+        phoneRegex.hasMatch(state.telephone.trim()) &&
+        state.nationalId.trim().isNotEmpty &&
+        state.primaryTrade.isNotEmpty &&
+        exp != null &&
+        exp >= 0;
   }
 
-  Future<void> _takeNicPhoto() async {
-    final result = await _picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 80,
-      maxWidth: 1600,
-    );
-    if (result != null) {
-      setState(() {
-        _nicPhotoPath = result.path;
-      });
-      _onFieldChanged();
-    }
+  bool _validateStep2(RegistrationState state) {
+    return state.idFrontPath != null && state.idBackPath != null;
   }
 
-  Future<void> _showNicOptions() async {
+  bool _validateStep3(RegistrationState state) {
+    return state.selfiePath != null;
+  }
+
+  Future<void> _pickImage({
+    required bool fromCamera,
+    required void Function(String path) onSelected,
+  }) async {
+    final image = await _imagePicker.pickImage(
+      source: fromCamera ? ImageSource.camera : ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 1800,
+    );
+    if (image == null) return;
+    onSelected(image.path);
+  }
+
+  Future<void> _showImageSourcePicker({
+    required String title,
+    required void Function(String path) onSelected,
+  }) async {
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            padding: const EdgeInsets.symmetric(vertical: 10),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 ListTile(
+                  title: Text(title),
+                  subtitle: const Text('Choose source'),
+                ),
+                ListTile(
                   leading: const Icon(Icons.camera_alt_outlined),
-                  title: Text(
-                    widget.selectedLanguage == 'si'
-                        ? 'ඡායාරූපයක් ගන්න'
-                        : widget.selectedLanguage == 'ta'
-                        ? 'புகைப்படம் எடுக்கவும்'
-                        : 'Take Photo',
-                  ),
+                  title: const Text('Camera'),
                   onTap: () async {
                     Navigator.of(context).pop();
-                    await _takeNicPhoto();
+                    await _pickImage(fromCamera: true, onSelected: onSelected);
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.photo_outlined),
-                  title: Text(
-                    widget.selectedLanguage == 'si'
-                        ? 'ගැලරියෙන් තෝරන්න'
-                        : widget.selectedLanguage == 'ta'
-                        ? 'கேலரியிலிருந்து தேர்ந்தெடுக்கவும்'
-                        : 'Choose from Gallery',
-                  ),
+                  leading: const Icon(Icons.photo_library_outlined),
+                  title: const Text('Gallery'),
                   onTap: () async {
                     Navigator.of(context).pop();
-                    await _pickNicFromGallery();
+                    await _pickImage(fromCamera: false, onSelected: onSelected);
                   },
                 ),
-                const SizedBox(height: 4),
               ],
             ),
           ),
@@ -335,1113 +225,448 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  void _toggleWorkerType(String id) {
-    setState(() {
-      if (_workerTypes.contains(id)) {
-        _workerTypes.remove(id);
-      } else {
-        _workerTypes.add(id);
-      }
-    });
-    _onFieldChanged();
+  void _handleNext() {
+    final notifier = ref.read(registrationProvider.notifier);
+    final state = ref.read(registrationProvider);
+
+    if (state.step == 0) {
+      setState(() => _showStep1Errors = true);
+      if (!_validateStep1(state)) return;
+    }
+
+    if (state.step == 1) {
+      setState(() => _showStep2Errors = true);
+      if (!_validateStep2(state)) return;
+    }
+
+    if (state.step == 2) {
+      setState(() => _showStep3Errors = true);
+      if (!_validateStep3(state)) return;
+    }
+
+    notifier.nextStep();
   }
 
-  void _showMessage(String title, String message) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(_t('ok')),
+  void _handleSubmit(RegistrationState state) {
+    setState(() {
+      _showStep1Errors = true;
+      _showStep2Errors = true;
+      _showStep3Errors = true;
+    });
+
+    if (!_validateStep1(state) ||
+        !_validateStep2(state) ||
+        !_validateStep3(state)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please complete all required steps.')),
+      );
+      return;
+    }
+
+    widget.onSignUpSuccess(
+      WorkerProfileData(
+        fullName: state.fullName,
+        profilePhotoPath: state.selfiePath ?? '',
+        email: '',
+        countryCode: '+94',
+        telephone: state.telephone.trim(),
+        dateOfBirth: '',
+        address: '',
+        city: '',
+        nationalId: state.nationalId,
+        workerTypes: [state.primaryTrade.toLowerCase().replaceAll(' ', '-')],
+        experienceYears: state.yearsOfExperience,
+        bio: '',
+        serviceRadiusKm: '5',
+        nicPhotoPath: state.idFrontPath ?? '',
+      ),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Registration submitted successfully.')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(registrationProvider);
+    final notifier = ref.read(registrationProvider.notifier);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Worker Registration & KYC')),
+      body: Stepper(
+        type: StepperType.vertical,
+        currentStep: state.step,
+        onStepTapped: notifier.setStep,
+        onStepContinue: state.step == 3 ? null : _handleNext,
+        onStepCancel: notifier.previousStep,
+        controlsBuilder: (context, details) {
+          final isLast = state.step == 3;
+          return Padding(
+            padding: const EdgeInsets.only(top: 14),
+            child: Row(
+              children: [
+                ElevatedButton(
+                  onPressed: isLast
+                      ? () => _handleSubmit(state)
+                      : details.onStepContinue,
+                  child: Text(isLast ? 'Submit' : 'Next'),
+                ),
+                const SizedBox(width: 10),
+                if (state.step > 0)
+                  OutlinedButton(
+                    onPressed: details.onStepCancel,
+                    child: const Text('Back'),
+                  ),
+              ],
+            ),
+          );
+        },
+        steps: [
+          Step(
+            isActive: state.step >= 0,
+            title: const Text('Step 1: Personal & Professional Details'),
+            content: Column(
+              children: [
+                TextField(
+                  controller: _fullNameController,
+                  onChanged: notifier.setFullName,
+                  decoration: InputDecoration(
+                    labelText: 'Full Name',
+                    errorText: _showStep1Errors && state.fullName.trim().isEmpty
+                        ? 'Full name is required'
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _telephoneController,
+                  keyboardType: TextInputType.phone,
+                  onChanged: notifier.setTelephone,
+                  decoration: InputDecoration(
+                    labelText: 'Telephone Number',
+                    errorText:
+                        _showStep1Errors &&
+                            !RegExp(
+                              r'^\d{7,15}$',
+                            ).hasMatch(state.telephone.trim())
+                        ? 'Enter a valid telephone number'
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _nationalIdController,
+                  onChanged: notifier.setNationalId,
+                  decoration: InputDecoration(
+                    labelText: 'National ID Number',
+                    errorText:
+                        _showStep1Errors && state.nationalId.trim().isEmpty
+                        ? 'National ID is required'
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: state.primaryTrade.isEmpty
+                      ? null
+                      : state.primaryTrade,
+                  items: _tradeOptions
+                      .map(
+                        (trade) =>
+                            DropdownMenuItem(value: trade, child: Text(trade)),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      notifier.setPrimaryTrade(value);
+                    }
+                  },
+                  decoration: InputDecoration(
+                    labelText: 'Primary Trade',
+                    errorText: _showStep1Errors && state.primaryTrade.isEmpty
+                        ? 'Primary trade is required'
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _experienceController,
+                  keyboardType: TextInputType.number,
+                  onChanged: notifier.setYearsOfExperience,
+                  decoration: InputDecoration(
+                    labelText: 'Years of Experience',
+                    errorText:
+                        _showStep1Errors &&
+                            (state.yearsOfExperience.trim().isEmpty ||
+                                int.tryParse(state.yearsOfExperience) == null)
+                        ? 'Enter valid years of experience'
+                        : null,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Step(
+            isActive: state.step >= 1,
+            title: const Text('Step 2: Document Upload (Manual KYC)'),
+            content: Column(
+              children: [
+                _UploadCard(
+                  title: 'Front of ID',
+                  imagePath: state.idFrontPath,
+                  onPick: () => _showImageSourcePicker(
+                    title: 'Upload Front of ID',
+                    onSelected: notifier.setFrontImage,
+                  ),
+                  onRemove: notifier.clearFrontImage,
+                ),
+                if (_showStep2Errors && state.idFrontPath == null)
+                  const _ErrorText('Front of ID is required'),
+                const SizedBox(height: 12),
+                _UploadCard(
+                  title: 'Back of ID',
+                  imagePath: state.idBackPath,
+                  onPick: () => _showImageSourcePicker(
+                    title: 'Upload Back of ID',
+                    onSelected: notifier.setBackImage,
+                  ),
+                  onRemove: notifier.clearBackImage,
+                ),
+                if (_showStep2Errors && state.idBackPath == null)
+                  const _ErrorText('Back of ID is required'),
+              ],
+            ),
+          ),
+          Step(
+            isActive: state.step >= 2,
+            title: const Text('Step 3: Identity Confirmation (Selfie)'),
+            content: Column(
+              children: [
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Live Selfie',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  width: 220,
+                  height: 220,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFF0B1533),
+                      width: 3,
+                    ),
+                  ),
+                  child: ClipOval(
+                    child: state.selfiePath == null
+                        ? Container(
+                            color: const Color(0xFFE2E8F0),
+                            child: const Center(
+                              child: Icon(Icons.person, size: 70),
+                            ),
+                          )
+                        : Image.file(
+                            File(state.selfiePath!),
+                            fit: BoxFit.cover,
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton.icon(
+                  onPressed: () => _showImageSourcePicker(
+                    title: 'Capture Live Selfie',
+                    onSelected: notifier.setSelfieImage,
+                  ),
+                  icon: const Icon(Icons.camera_alt_outlined),
+                  label: Text(
+                    state.selfiePath == null
+                        ? 'Capture Selfie'
+                        : 'Retake Selfie',
+                  ),
+                ),
+                if (state.selfiePath != null)
+                  TextButton.icon(
+                    onPressed: notifier.clearSelfieImage,
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Remove'),
+                  ),
+                if (_showStep3Errors && state.selfiePath == null)
+                  const _ErrorText(
+                    'Selfie is required for identity confirmation',
+                  ),
+              ],
+            ),
+          ),
+          Step(
+            isActive: state.step >= 3,
+            title: const Text('Step 4: Submission'),
+            content: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Review your details and submit registration.',
+                  style: TextStyle(fontSize: 14, color: Color(0xFF475569)),
+                ),
+                const SizedBox(height: 10),
+                _SummaryTile(label: 'Full Name', value: state.fullName),
+                _SummaryTile(label: 'Telephone', value: state.telephone),
+                _SummaryTile(label: 'National ID', value: state.nationalId),
+                _SummaryTile(label: 'Primary Trade', value: state.primaryTrade),
+                _SummaryTile(
+                  label: 'Experience',
+                  value: '${state.yearsOfExperience} years',
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Tap Submit to finish worker registration and KYC.',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: widget.onNavigateToLogin,
+                  child: const Text('Already have an account? Login'),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
-
-  bool _validateForm() {
-    final name = _nameController.text.trim();
-    final email = _emailController.text.trim();
-    final tel = _telephoneController.text.trim();
-    final password = _passwordController.text;
-    final confirmPassword = _confirmPasswordController.text;
-    final dob = _dateOfBirthController.text.trim();
-    final address = _addressController.text.trim();
-    final city = _cityController.text.trim();
-    final nid = _nationalIdController.text.trim();
-    final experience = _experienceController.text.trim();
-    final bio = _bioController.text.trim();
-
-    final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
-    final telRegex = RegExp(r'^\d{7,15}$');
-    final dobRegex = RegExp(r'^\d{4}-\d{2}-\d{2}$');
-
-    _nameError = name.isEmpty ? _t('requiredField') : null;
-    _dobError = dob.isEmpty
-        ? _t('requiredField')
-        : (!dobRegex.hasMatch(dob) ? _t('invalidDob') : null);
-    _nidError = nid.isEmpty ? _t('requiredField') : null;
-    _nicPhotoError = _nicPhotoPath == null ? _t('requiredField') : null;
-    _phoneError = tel.isEmpty
-        ? _t('requiredField')
-        : (!telRegex.hasMatch(tel) ? _t('invalidPhone') : null);
-    _emailError = email.isEmpty
-        ? _t('requiredField')
-        : (!emailRegex.hasMatch(email) ? _t('invalidEmail') : null);
-    _addressError = address.isEmpty ? _t('requiredField') : null;
-    _passwordError = password.isEmpty
-        ? _t('requiredField')
-        : (password.length < 6 ? _t('passwordLength') : null);
-    _confirmPasswordError = confirmPassword.isEmpty
-        ? _t('requiredField')
-        : (password != confirmPassword ? _t('passwordMismatch') : null);
-    _workerTypesError = _workerTypes.isEmpty ? _t('selectWorkerType') : null;
-    _experienceError = experience.isEmpty ? _t('requiredField') : null;
-    _bioError = bio.isEmpty ? _t('requiredField') : null;
-    _cityError = city.isEmpty ? _t('requiredField') : null;
-    _termsError = _agreedToTerms ? null : _t('mustAgreeTerms');
-
-    setState(() {});
-
-    return [
-      _nameError,
-      _dobError,
-      _nidError,
-      _nicPhotoError,
-      _phoneError,
-      _emailError,
-      _addressError,
-      _passwordError,
-      _confirmPasswordError,
-      _workerTypesError,
-      _experienceError,
-      _bioError,
-      _cityError,
-      _termsError,
-    ].every((error) => error == null);
-  }
-
-  void _onFieldChanged() {
-    if (_submitted) {
-      _validateForm();
-    }
-  }
-
-  void _handleSignUp() {
-    setState(() {
-      _submitted = true;
-    });
-
-    if (!_validateForm()) {
-      return;
-    }
-
-    _showMessage(
-      _t('success'),
-      widget.selectedLanguage == 'si'
-          ? 'ලියාපදිංචිය සාර්ථකයි!'
-          : widget.selectedLanguage == 'ta'
-          ? 'பதிவு வெற்றிகரமாக முடிந்தது!'
-          : 'Signup successful!',
-    );
-    widget.onSignUpSuccess(
-      WorkerProfileData(
-        fullName: _nameController.text.trim(),
-        profilePhotoPath: '',
-        email: _emailController.text.trim(),
-        countryCode: _countryCode,
-        telephone: _telephoneController.text.trim(),
-        dateOfBirth: _dateOfBirthController.text.trim(),
-        address: _addressController.text.trim(),
-        city: _cityController.text.trim(),
-        nationalId: _nationalIdController.text.trim(),
-        workerTypes: _workerTypes.toList(),
-        experienceYears: _experienceController.text.trim(),
-        bio: _bioController.text.trim(),
-        serviceRadiusKm: _serviceRadius,
-        nicPhotoPath: _nicPhotoPath ?? '',
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final mediaQuery = MediaQuery.of(context);
-
-    final backgroundColor = theme.colorScheme.background;
-    final cardBackground = theme.cardColor;
-    final borderColor = theme.dividerColor.withOpacity(0.5);
-    final primaryColor = theme.colorScheme.primary;
-    final textPrimary = theme.textTheme.bodyLarge?.color ?? Colors.black87;
-    final textSecondary =
-        theme.textTheme.bodyMedium?.color?.withOpacity(0.7) ?? Colors.black54;
-
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      resizeToAvoidBottomInset: true,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              padding: EdgeInsets.only(
-                left: 24,
-                right: 24,
-                top: 40,
-                bottom: mediaQuery.viewInsets.bottom + 24,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _t('createAccount'),
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _t('signUpDescription'),
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontSize: 16,
-                      color: textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Personal Information
-                  _SectionHeader(
-                    icon: Icons.person_outline,
-                    title: _t('personalInfo'),
-                    color: primaryColor,
-                  ),
-                  const SizedBox(height: 12),
-                  _InputLabel(label: _t('name'), color: textPrimary),
-                  const SizedBox(height: 8),
-                  _InputWrapper(
-                    background: cardBackground,
-                    borderColor: borderColor,
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.person_outline,
-                          color: textSecondary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: _nameController,
-                            textCapitalization: TextCapitalization.words,
-                            onChanged: (_) => _onFieldChanged(),
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              isCollapsed: true,
-                              hintText: _t('name'),
-                              hintStyle: TextStyle(
-                                color: textSecondary,
-                                fontSize: 16,
-                              ),
-                            ),
-                            style: TextStyle(color: textPrimary, fontSize: 16),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (_nameError != null) ...[
-                    const SizedBox(height: 6),
-                    _FieldError(message: _nameError!),
-                  ],
-                  const SizedBox(height: 16),
-                  _InputLabel(label: _t('dateOfBirth'), color: textPrimary),
-                  const SizedBox(height: 8),
-                  _InputWrapper(
-                    background: cardBackground,
-                    borderColor: borderColor,
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.calendar_today_outlined,
-                          color: textSecondary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: _dateOfBirthController,
-                            keyboardType: TextInputType.datetime,
-                            onChanged: (_) => _onFieldChanged(),
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              isCollapsed: true,
-                              hintText: 'YYYY-MM-DD',
-                              hintStyle: TextStyle(
-                                color: textSecondary,
-                                fontSize: 16,
-                              ),
-                            ),
-                            style: TextStyle(color: textPrimary, fontSize: 16),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (_dobError != null) ...[
-                    const SizedBox(height: 6),
-                    _FieldError(message: _dobError!),
-                  ],
-                  const SizedBox(height: 16),
-                  _InputLabel(label: _t('nationalId'), color: textPrimary),
-                  const SizedBox(height: 8),
-                  _InputWrapper(
-                    background: cardBackground,
-                    borderColor: borderColor,
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.badge_outlined,
-                          color: textSecondary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: _nationalIdController,
-                            onChanged: (_) => _onFieldChanged(),
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              isCollapsed: true,
-                              hintText: _t('nationalId'),
-                              hintStyle: TextStyle(
-                                color: textSecondary,
-                                fontSize: 16,
-                              ),
-                            ),
-                            style: TextStyle(color: textPrimary, fontSize: 16),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (_nidError != null) ...[
-                    const SizedBox(height: 6),
-                    _FieldError(message: _nidError!),
-                  ],
-                  const SizedBox(height: 16),
-                  _InputLabel(
-                    label: '${_t('nationalId')} Photo',
-                    color: textPrimary,
-                  ),
-                  const SizedBox(height: 8),
-                  if (_nicPhotoPath != null)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.file(
-                            File(_nicPhotoPath!),
-                            width: double.infinity,
-                            height: 180,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        OutlinedButton.icon(
-                          onPressed: _showNicOptions,
-                          icon: Icon(
-                            Icons.camera_alt_outlined,
-                            color: primaryColor,
-                            size: 18,
-                          ),
-                          label: Text(
-                            widget.selectedLanguage == 'si'
-                                ? 'ඡායාරූපය වෙනස් කරන්න'
-                                : widget.selectedLanguage == 'ta'
-                                ? 'புகைப்படத்தை மாற்று'
-                                : 'Change Photo',
-                            style: TextStyle(color: primaryColor),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  else
-                    GestureDetector(
-                      onTap: _showNicOptions,
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 24,
-                          horizontal: 16,
-                        ),
-                        decoration: BoxDecoration(
-                          color: cardBackground,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: borderColor,
-                            width: 1.5,
-                            style: BorderStyle.solid,
-                          ),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.camera_alt_outlined,
-                              size: 32,
-                              color: primaryColor,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              widget.selectedLanguage == 'si'
-                                  ? 'හැඳුනුම්පත් ඡායාරූපය උඩුගත කරන්න'
-                                  : widget.selectedLanguage == 'ta'
-                                  ? 'அடையாள அட்டை புகைப்படத்தைப் பதிவேற்றவும்'
-                                  : 'Upload NIC Photo',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: textPrimary,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              widget.selectedLanguage == 'si'
-                                  ? 'ඡායාරූපයක් ගන්න හෝ ගැලරියෙන් තෝරන්න'
-                                  : widget.selectedLanguage == 'ta'
-                                  ? 'புகைப்படம் எடுக்கவும் அல்லது தேர்ந்தெடுக்கவும்'
-                                  : 'Take photo or choose from gallery',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: textSecondary,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  if (_nicPhotoError != null) ...[
-                    const SizedBox(height: 6),
-                    _FieldError(message: _nicPhotoError!),
-                  ],
-
-                  const SizedBox(height: 16),
-                  _InputLabel(label: _t('telephone'), color: textPrimary),
-                  const SizedBox(height: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: cardBackground,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: borderColor, width: 1),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.call_outlined,
-                          color: textSecondary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        DropdownButton<String>(
-                          value: _countryCode,
-                          underline: const SizedBox.shrink(),
-                          icon: Icon(
-                            Icons.arrow_drop_down,
-                            color: textSecondary,
-                          ),
-                          items: _countryCodes
-                              .map(
-                                (c) => DropdownMenuItem<String>(
-                                  value: c['code'],
-                                  child: Text(
-                                    c['label']!,
-                                    style: TextStyle(color: textPrimary),
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() {
-                                _countryCode = value;
-                              });
-                            }
-                          },
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: _telephoneController,
-                            keyboardType: TextInputType.phone,
-                            onChanged: (_) => _onFieldChanged(),
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              isCollapsed: true,
-                              hintText: _t('telephone'),
-                              hintStyle: TextStyle(
-                                color: textSecondary,
-                                fontSize: 16,
-                              ),
-                            ),
-                            style: TextStyle(color: textPrimary, fontSize: 16),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (_phoneError != null) ...[
-                    const SizedBox(height: 6),
-                    _FieldError(message: _phoneError!),
-                  ],
-
-                  const SizedBox(height: 16),
-                  _InputLabel(label: _t('email'), color: textPrimary),
-                  const SizedBox(height: 8),
-                  _InputWrapper(
-                    background: cardBackground,
-                    borderColor: borderColor,
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.mail_outline,
-                          color: textSecondary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            onChanged: (_) => _onFieldChanged(),
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              isCollapsed: true,
-                              hintText: _t('email'),
-                              hintStyle: TextStyle(
-                                color: textSecondary,
-                                fontSize: 16,
-                              ),
-                            ),
-                            style: TextStyle(color: textPrimary, fontSize: 16),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (_emailError != null) ...[
-                    const SizedBox(height: 6),
-                    _FieldError(message: _emailError!),
-                  ],
-
-                  const SizedBox(height: 16),
-                  _InputLabel(label: _t('address'), color: textPrimary),
-                  const SizedBox(height: 8),
-                  _InputWrapper(
-                    background: cardBackground,
-                    borderColor: borderColor,
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.home_outlined,
-                          color: textSecondary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: _addressController,
-                            onChanged: (_) => _onFieldChanged(),
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              isCollapsed: true,
-                              hintText: _t('address'),
-                              hintStyle: TextStyle(
-                                color: textSecondary,
-                                fontSize: 16,
-                              ),
-                            ),
-                            style: TextStyle(color: textPrimary, fontSize: 16),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (_addressError != null) ...[
-                    const SizedBox(height: 6),
-                    _FieldError(message: _addressError!),
-                  ],
-
-                  const SizedBox(height: 16),
-                  _InputLabel(label: _t('password'), color: textPrimary),
-                  const SizedBox(height: 8),
-                  _InputWrapper(
-                    background: cardBackground,
-                    borderColor: borderColor,
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.lock_outline,
-                          color: textSecondary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: _passwordController,
-                            obscureText: !_showPassword,
-                            onChanged: (_) => _onFieldChanged(),
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              isCollapsed: true,
-                              hintText: _t('password'),
-                              hintStyle: TextStyle(
-                                color: textSecondary,
-                                fontSize: 16,
-                              ),
-                            ),
-                            style: TextStyle(color: textPrimary, fontSize: 16),
-                          ),
-                        ),
-                        InkWell(
-                          onTap: () {
-                            setState(() {
-                              _showPassword = !_showPassword;
-                            });
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.all(4.0),
-                            child: Icon(
-                              _showPassword
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
-                              color: textSecondary,
-                              size: 20,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (_passwordError != null) ...[
-                    const SizedBox(height: 6),
-                    _FieldError(message: _passwordError!),
-                  ],
-
-                  const SizedBox(height: 16),
-                  _InputLabel(label: _t('confirmPassword'), color: textPrimary),
-                  const SizedBox(height: 8),
-                  _InputWrapper(
-                    background: cardBackground,
-                    borderColor: borderColor,
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.lock_outline,
-                          color: textSecondary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: _confirmPasswordController,
-                            obscureText: !_showPassword,
-                            onChanged: (_) => _onFieldChanged(),
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              isCollapsed: true,
-                              hintText: _t('confirmPassword'),
-                              hintStyle: TextStyle(
-                                color: textSecondary,
-                                fontSize: 16,
-                              ),
-                            ),
-                            style: TextStyle(color: textPrimary, fontSize: 16),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (_confirmPasswordError != null) ...[
-                    const SizedBox(height: 6),
-                    _FieldError(message: _confirmPasswordError!),
-                  ],
-
-                  const SizedBox(height: 24),
-                  _SectionHeader(
-                    icon: Icons.work_outline,
-                    title: _t('professionalInfo'),
-                    color: primaryColor,
-                  ),
-                  const SizedBox(height: 12),
-                  _InputLabel(label: _t('workerTypes'), color: textPrimary),
-                  const SizedBox(height: 8),
-                  Column(
-                    children: _availableWorkerTypes.map((type) {
-                      final id = type['id']!;
-                      final isSelected = _workerTypes.contains(id);
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(10),
-                          onTap: () => _toggleWorkerType(id),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 10,
-                              horizontal: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: cardBackground,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: isSelected ? primaryColor : borderColor,
-                                width: 1,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 20,
-                                  height: 20,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(5),
-                                    border: Border.all(
-                                      color: isSelected
-                                          ? primaryColor
-                                          : borderColor,
-                                      width: 2,
-                                    ),
-                                    color: isSelected
-                                        ? primaryColor
-                                        : Colors.transparent,
-                                  ),
-                                  child: isSelected
-                                      ? const Icon(
-                                          Icons.check,
-                                          size: 14,
-                                          color: Colors.white,
-                                        )
-                                      : null,
-                                ),
-                                const SizedBox(width: 10),
-                                Icon(
-                                  _iconForWorkerType(id),
-                                  size: 18,
-                                  color: textSecondary,
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    _workerTypeLabel(id),
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: textPrimary,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  if (_workerTypesError != null) ...[
-                    const SizedBox(height: 6),
-                    _FieldError(message: _workerTypesError!),
-                  ],
-
-                  const SizedBox(height: 16),
-                  _InputLabel(label: _t('experience'), color: textPrimary),
-                  const SizedBox(height: 8),
-                  _InputWrapper(
-                    background: cardBackground,
-                    borderColor: borderColor,
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.schedule_outlined,
-                          color: textSecondary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: _experienceController,
-                            onChanged: (_) => _onFieldChanged(),
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                              isCollapsed: true,
-                              hintText: 'e.g., 5 years',
-                            ),
-                            style: TextStyle(color: textPrimary, fontSize: 16),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (_experienceError != null) ...[
-                    const SizedBox(height: 6),
-                    _FieldError(message: _experienceError!),
-                  ],
-
-                  const SizedBox(height: 16),
-                  _InputLabel(label: _t('bio'), color: textPrimary),
-                  const SizedBox(height: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: cardBackground,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: borderColor, width: 1),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.description_outlined,
-                          color: textSecondary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: _bioController,
-                            maxLines: 3,
-                            onChanged: (_) => _onFieldChanged(),
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              isCollapsed: true,
-                              hintText: _t('bio'),
-                              hintStyle: TextStyle(
-                                color: textSecondary,
-                                fontSize: 16,
-                              ),
-                            ),
-                            style: TextStyle(color: textPrimary, fontSize: 16),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (_bioError != null) ...[
-                    const SizedBox(height: 6),
-                    _FieldError(message: _bioError!),
-                  ],
-
-                  const SizedBox(height: 24),
-                  _SectionHeader(
-                    icon: Icons.location_on_outlined,
-                    title: _t('serviceArea'),
-                    color: primaryColor,
-                  ),
-                  const SizedBox(height: 12),
-                  _InputLabel(label: _t('city'), color: textPrimary),
-                  const SizedBox(height: 8),
-                  _InputWrapper(
-                    background: cardBackground,
-                    borderColor: borderColor,
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.location_city_outlined,
-                          color: textSecondary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: _cityController,
-                            onChanged: (_) => _onFieldChanged(),
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              isCollapsed: true,
-                              hintText: _t('city'),
-                              hintStyle: TextStyle(
-                                color: textSecondary,
-                                fontSize: 16,
-                              ),
-                            ),
-                            style: TextStyle(color: textPrimary, fontSize: 16),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (_cityError != null) ...[
-                    const SizedBox(height: 6),
-                    _FieldError(message: _cityError!),
-                  ],
-
-                  const SizedBox(height: 16),
-                  _InputLabel(label: _t('serviceRadius'), color: textPrimary),
-                  const SizedBox(height: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: cardBackground,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: borderColor, width: 1),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.radio_button_checked_outlined,
-                          color: textSecondary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: DropdownButton<String>(
-                            value: _serviceRadius,
-                            isExpanded: true,
-                            underline: const SizedBox.shrink(),
-                            icon: Icon(
-                              Icons.arrow_drop_down,
-                              color: textSecondary,
-                            ),
-                            items: const [
-                              DropdownMenuItem(value: '3', child: Text('3 km')),
-                              DropdownMenuItem(value: '5', child: Text('5 km')),
-                              DropdownMenuItem(
-                                value: '10',
-                                child: Text('10 km'),
-                              ),
-                              DropdownMenuItem(
-                                value: '15',
-                                child: Text('15 km'),
-                              ),
-                              DropdownMenuItem(
-                                value: '20',
-                                child: Text('20 km'),
-                              ),
-                            ],
-                            onChanged: (value) {
-                              if (value != null) {
-                                setState(() {
-                                  _serviceRadius = value;
-                                });
-                              }
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Switch(
-                        value: _agreedToTerms,
-                        onChanged: (v) {
-                          setState(() {
-                            _agreedToTerms = v;
-                          });
-                          _onFieldChanged();
-                        },
-                        activeColor: primaryColor,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          widget.selectedLanguage == 'si'
-                              ? 'මම නියම සහ කොන්දේසි වලට එකඟ වෙමි'
-                              : widget.selectedLanguage == 'ta'
-                              ? 'விதிமுறைகள் மற்றும் நிபந்தனைகளுக்கு நான் ஒப்புக்கொள்கிறேன்'
-                              : 'I agree to Terms & Conditions',
-                          style: TextStyle(fontSize: 14, color: textPrimary),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (_termsError != null) ...[
-                    const SizedBox(height: 6),
-                    _FieldError(message: _termsError!),
-                  ],
-
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _handleSignUp,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 4,
-                        shadowColor: primaryColor.withOpacity(0.6),
-                      ),
-                      child: Text(
-                        _t('signUp'),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-                  Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          _t('alreadyHaveAccount'),
-                          style: TextStyle(color: textSecondary, fontSize: 14),
-                        ),
-                        const SizedBox(width: 4),
-                        GestureDetector(
-                          onTap: widget.onNavigateToLogin,
-                          child: Text(
-                            _t('login'),
-                            style: TextStyle(
-                              color: primaryColor,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  SizedBox(height: mediaQuery.padding.bottom + 8),
-                ],
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  IconData _iconForWorkerType(String id) {
-    switch (id) {
-      case 'plumber':
-        return Icons.water_damage_outlined;
-      case 'electrician':
-        return Icons.bolt_outlined;
-      case 'carpenter':
-        return Icons.chair_alt_outlined;
-      case 'painter':
-        return Icons.format_paint_outlined;
-      case 'ac-technician':
-        return Icons.ac_unit;
-      case 'mechanic':
-        return Icons.build_outlined;
-      default:
-        return Icons.handyman_outlined;
-    }
-  }
 }
 
-class _InputLabel extends StatelessWidget {
-  final String label;
-  final Color color;
+class _UploadCard extends StatelessWidget {
+  final String title;
+  final String? imagePath;
+  final VoidCallback onPick;
+  final VoidCallback onRemove;
 
-  const _InputLabel({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: color),
-    );
-  }
-}
-
-class _InputWrapper extends StatelessWidget {
-  final Widget child;
-  final Color background;
-  final Color borderColor;
-
-  const _InputWrapper({
-    required this.child,
-    required this.background,
-    required this.borderColor,
+  const _UploadCard({
+    required this.title,
+    required this.imagePath,
+    required this.onPick,
+    required this.onRemove,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor, width: 1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: child,
-    );
-  }
-}
-
-class _FieldError extends StatelessWidget {
-  final String message;
-
-  const _FieldError({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      message,
-      style: const TextStyle(
-        fontSize: 12,
-        color: Color(0xFFB42318),
-        fontWeight: FontWeight.w600,
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final Color color;
-
-  const _SectionHeader({
-    required this.icon,
-    required this.title,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, color: color, size: 22),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: color,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           ),
+          const SizedBox(height: 10),
+          if (imagePath == null)
+            SizedBox(
+              width: double.infinity,
+              height: 160,
+              child: OutlinedButton.icon(
+                onPressed: onPick,
+                icon: const Icon(Icons.upload_outlined),
+                label: const Text('Upload via Camera or Gallery'),
+              ),
+            )
+          else
+            Column(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.file(
+                    File(imagePath!),
+                    width: double.infinity,
+                    height: 160,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: onPick,
+                        icon: const Icon(Icons.camera_alt_outlined),
+                        label: const Text('Retake'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: onRemove,
+                        icon: const Icon(Icons.delete_outline),
+                        label: const Text('Remove'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorText extends StatelessWidget {
+  final String text;
+
+  const _ErrorText(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Color(0xFFB42318),
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
         ),
-      ],
+      ),
+    );
+  }
+}
+
+class _SummaryTile extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _SummaryTile({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: const TextStyle(color: Color(0xFF475569)),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

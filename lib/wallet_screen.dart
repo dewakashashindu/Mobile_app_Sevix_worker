@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'payment_history_screen.dart';
+import 'payout_settings_screen.dart';
 import 'withdrawal_request_screen.dart';
 
 class WalletScreen extends StatefulWidget {
@@ -388,6 +389,28 @@ class _WalletScreenState extends State<WalletScreen> {
                           : _language == 'ta'
                           ? 'Escrow கட்டண வரலாறு'
                           : 'Escrow Payment History',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              PayoutSettingsScreen(selectedLanguage: _language),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.account_balance),
+                    label: Text(
+                      _language == 'si'
+                          ? 'Stripe ගෙවීම් සැකසුම්'
+                          : _language == 'ta'
+                          ? 'Stripe பேஅவுட் அமைப்புகள்'
+                          : 'Stripe Payout Settings',
                     ),
                   ),
                 ),

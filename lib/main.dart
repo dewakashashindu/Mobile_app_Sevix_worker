@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'language_select_screen.dart';
 import 'login_screen.dart';
@@ -18,7 +19,7 @@ import 'job_execution_screen.dart';
 import 'payment_history_screen.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatefulWidget {
