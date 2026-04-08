@@ -53,6 +53,22 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<key>NSCameraUsageDescription</key>
+	<string>SEVIX needs camera access to capture completed job proof photos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>SEVIX needs photo library access to store and read job proof images.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>SEVIX needs permission to save captured job photos.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>SEVIX uses your location to navigate to the customer and track active jobs.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>SEVIX uses location updates while you are actively en route to a customer.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>SEVIX needs background location while navigating for active assignments.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
