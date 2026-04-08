@@ -79,3 +79,4 @@ class SkeletonBox extends StatelessWidget {
     );
   }
 }
+

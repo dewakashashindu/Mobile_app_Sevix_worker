@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'chat_detail_screen.dart';
-import 'chat_models.dart';
-import 'error_state_view.dart';
-import 'shimmer_skeleton.dart';
+import 'package:sevix_worker/features/communication/chat_detail_screen.dart';
+import 'package:sevix_worker/features/communication/chat_models.dart';
+import 'package:sevix_worker/core/error_state_view.dart';
+import 'package:sevix_worker/core/shimmer_skeleton.dart';
 
 class ChatListScreen extends StatefulWidget {
   final String selectedLanguage;
@@ -498,3 +498,4 @@ class _ChatEmptyState extends StatelessWidget {
     );
   }
 }
+

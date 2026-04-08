@@ -255,3 +255,4 @@ class _PayoutSettingsScreenState extends State<PayoutSettingsScreen> {
     );
   }
 }
+

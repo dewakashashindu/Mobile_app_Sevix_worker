@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'payment_history_screen.dart';
-import 'payout_settings_screen.dart';
-import 'withdrawal_request_screen.dart';
+import 'package:sevix_worker/features/wallet/payment_history_screen.dart';
+import 'package:sevix_worker/features/wallet/payout_settings_screen.dart';
+import 'package:sevix_worker/features/wallet/withdrawal_request_screen.dart';
 
 class WalletScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -611,3 +611,4 @@ class _WalletTransaction {
     required this.type,
   });
 }
+

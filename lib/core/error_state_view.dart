@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'press_scale.dart';
+import 'package:sevix_worker/core/press_scale.dart';
 
 enum LoadErrorType { network, data }
 
@@ -80,3 +80,4 @@ class ErrorStateView extends StatelessWidget {
     );
   }
 }
+

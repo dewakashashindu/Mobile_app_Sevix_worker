@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'language_select_screen.dart';
-import 'login_screen.dart';
-import 'signup_screen.dart';
-import 'otp_screen.dart';
-import 'settings_screen.dart';
-import 'job_feed_screen.dart';
-import 'worker_job.dart';
-import 'bid_status_screen.dart';
-import 'wallet_screen.dart';
-import 'notifications_screen.dart';
-import 'worker_profile_data.dart';
-import 'chat_list_screen.dart';
-import 'work_history_screen.dart';
-import 'professional_profile_screen.dart';
-import 'job_execution_screen.dart';
-import 'payment_history_screen.dart';
+import 'package:sevix_worker/features/auth/language_select_screen.dart';
+import 'package:sevix_worker/features/auth/login_screen.dart';
+import 'package:sevix_worker/features/auth/signup_screen.dart';
+import 'package:sevix_worker/features/auth/otp_screen.dart';
+import 'package:sevix_worker/core/settings_screen.dart';
+import 'package:sevix_worker/features/jobs/job_feed_screen.dart';
+import 'package:sevix_worker/features/jobs/worker_job.dart';
+import 'package:sevix_worker/features/jobs/bid_status_screen.dart';
+import 'package:sevix_worker/features/wallet/wallet_screen.dart';
+import 'package:sevix_worker/features/communication/notifications_screen.dart';
+import 'package:sevix_worker/features/profile/worker_profile_data.dart';
+import 'package:sevix_worker/features/communication/chat_list_screen.dart';
+import 'package:sevix_worker/features/profile/work_history_screen.dart';
+import 'package:sevix_worker/features/profile/professional_profile_screen.dart';
+import 'package:sevix_worker/features/execution/job_execution_screen.dart';
+import 'package:sevix_worker/features/wallet/payment_history_screen.dart';
 
 void main() {
   runApp(const ProviderScope(child: MyApp()));
@@ -1383,3 +1383,4 @@ class _RootScreenState extends State<_RootScreen> {
     );
   }
 }
+

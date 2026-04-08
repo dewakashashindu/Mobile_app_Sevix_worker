@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'edit_profile_screen.dart';
-import 'worker_profile_data.dart';
+import 'package:sevix_worker/features/profile/edit_profile_screen.dart';
+import 'package:sevix_worker/features/profile/worker_profile_data.dart';
 
 class SettingsScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -1224,3 +1224,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 }
+

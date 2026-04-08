@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'bid_status_screen.dart';
-import 'error_state_view.dart';
-import 'job_detail_screen.dart';
-import 'shimmer_skeleton.dart';
-import 'worker_job.dart';
+import 'package:sevix_worker/features/jobs/bid_status_screen.dart';
+import 'package:sevix_worker/core/error_state_view.dart';
+import 'package:sevix_worker/features/jobs/job_detail_screen.dart';
+import 'package:sevix_worker/core/shimmer_skeleton.dart';
+import 'package:sevix_worker/features/jobs/worker_job.dart';
 
 class JobFeedScreen extends StatefulWidget {
   final List<WorkerJob> jobs;
@@ -640,3 +640,4 @@ class _InlineCountdownTextState extends State<_InlineCountdownText> {
     );
   }
 }
+

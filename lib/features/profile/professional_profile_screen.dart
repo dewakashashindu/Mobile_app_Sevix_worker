@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'identity_verification_screen.dart';
+import 'package:sevix_worker/features/profile/identity_verification_screen.dart';
 
 class ProfessionalProfileScreen extends StatefulWidget {
   final String selectedLanguage;
@@ -314,3 +314,4 @@ class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> {
     );
   }
 }
+

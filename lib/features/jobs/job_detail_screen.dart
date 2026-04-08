@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'submit_bid_screen.dart';
-import 'worker_job.dart';
+import 'package:sevix_worker/features/jobs/submit_bid_screen.dart';
+import 'package:sevix_worker/features/jobs/worker_job.dart';
 
 class JobDetailScreen extends StatefulWidget {
   final WorkerJob job;
@@ -336,3 +336,4 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
     );
   }
 }
+

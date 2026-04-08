@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'chat_models.dart';
+import 'package:sevix_worker/features/communication/chat_models.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   final ChatConversation conversation;
@@ -437,3 +437,4 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     );
   }
 }
+

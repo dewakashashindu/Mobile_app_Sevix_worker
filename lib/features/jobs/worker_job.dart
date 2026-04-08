@@ -29,3 +29,4 @@ class WorkerJob {
     required this.bidDeadline,
   });
 }
+

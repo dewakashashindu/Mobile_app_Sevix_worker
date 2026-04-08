@@ -266,3 +266,4 @@ class _PaymentRecord {
     required this.escrowStatus,
   });
 }
+

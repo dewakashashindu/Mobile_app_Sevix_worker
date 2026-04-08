@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'worker_job.dart';
+import 'package:sevix_worker/features/jobs/worker_job.dart';
 
 class BidStatusScreen extends StatelessWidget {
   final WorkerJob job;
@@ -168,3 +168,4 @@ class BidStatusScreen extends StatelessWidget {
     );
   }
 }
+

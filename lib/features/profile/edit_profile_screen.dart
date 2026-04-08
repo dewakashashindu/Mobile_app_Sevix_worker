@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'worker_profile_data.dart';
+import 'package:sevix_worker/features/profile/worker_profile_data.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final String selectedLanguage;
@@ -623,3 +623,4 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 }
+

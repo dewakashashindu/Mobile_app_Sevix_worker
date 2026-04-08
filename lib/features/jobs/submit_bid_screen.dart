@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'bid_status_screen.dart';
-import 'press_scale.dart';
-import 'worker_job.dart';
+import 'package:sevix_worker/features/jobs/bid_status_screen.dart';
+import 'package:sevix_worker/core/press_scale.dart';
+import 'package:sevix_worker/features/jobs/worker_job.dart';
 
 class SubmitBidScreen extends StatefulWidget {
   final WorkerJob job;
@@ -412,3 +412,4 @@ class _SuccessCheckDialogState extends State<_SuccessCheckDialog>
     );
   }
 }
+

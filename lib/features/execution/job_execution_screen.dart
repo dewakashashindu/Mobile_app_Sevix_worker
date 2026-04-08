@@ -13,7 +13,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:signature/signature.dart';
 
-import 'worker_job.dart';
+import 'package:sevix_worker/features/jobs/worker_job.dart';
 
 enum JobPhase { enRoute, arrived, inProgress, review }
 
@@ -1181,3 +1181,4 @@ const String _silverMapStyleJson = '''
   }
 ]
 ''';
+

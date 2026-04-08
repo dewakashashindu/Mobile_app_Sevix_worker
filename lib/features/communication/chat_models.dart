@@ -61,3 +61,4 @@ class ChatConversation {
     required this.messages,
   });
 }
+

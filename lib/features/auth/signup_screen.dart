@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'worker_profile_data.dart';
+import 'package:sevix_worker/features/profile/worker_profile_data.dart';
 
 class RegistrationState {
   final int step;
@@ -670,3 +670,4 @@ class _SummaryTile extends StatelessWidget {
     );
   }
 }
+

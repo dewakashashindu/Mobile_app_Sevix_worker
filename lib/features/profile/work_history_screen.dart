@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'error_state_view.dart';
-import 'shimmer_skeleton.dart';
+import 'package:sevix_worker/core/error_state_view.dart';
+import 'package:sevix_worker/core/shimmer_skeleton.dart';
 
 class WorkHistoryJob {
   final String jobTitle;
@@ -396,3 +396,4 @@ class _JobListTabState extends State<_JobListTab> {
     );
   }
 }
+

@@ -612,3 +612,4 @@ class _ContinueButton extends StatelessWidget {
     return GestureDetector(onTap: onPressed, child: buttonChild);
   }
 }
+
