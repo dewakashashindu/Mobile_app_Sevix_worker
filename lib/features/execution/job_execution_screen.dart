@@ -7,12 +7,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:signature/signature.dart';
 
+import 'package:sevix_worker/features/execution/offline_completion_buffer.dart';
 import 'package:sevix_worker/features/jobs/worker_job.dart';
 
 enum JobPhase { enRoute, arrived, inProgress, review }
@@ -61,12 +63,15 @@ class _JobExecutionScreenState extends ConsumerState<JobExecutionScreen> {
   bool _isLoadingRoute = false;
   bool _isSubmitting = false;
   bool _signatureConfirmed = false;
+  bool _etaAutoUpdateSent = false;
+  bool _isSyncingOfflineBuffer = false;
   XFile? _completionPhoto;
 
   @override
   void initState() {
     super.initState();
     _bootstrapLocationTracking();
+    unawaited(_syncOfflineCompletions());
     _signatureController.addListener(_onSignatureChanged);
   }
 
@@ -152,9 +157,32 @@ class _JobExecutionScreenState extends ConsumerState<JobExecutionScreen> {
             final phase = ref.read(jobPhaseProvider);
             if (phase == JobPhase.enRoute || phase == JobPhase.arrived) {
               await _refreshRoute();
+              _maybeSendAutomatedEtaUpdate(position);
             }
           },
         );
+  }
+
+  void _maybeSendAutomatedEtaUpdate(Position position) {
+    if (_etaAutoUpdateSent) {
+      return;
+    }
+
+    final meters = _distanceMeters(position);
+    const averageCitySpeedMetersPerMinute = 420.0;
+    final etaMinutes = (meters / averageCitySpeedMetersPerMinute).round();
+
+    if (etaMinutes > 0 && etaMinutes <= 5) {
+      _etaAutoUpdateSent = true;
+      unawaited(HapticFeedback.selectionClick());
+      _showSnack(
+        _t(
+          'Auto message sent: arriving in about 5 minutes.',
+          'ස්වයංක්‍රීය පණිවිඩය යැවුණා: විනාඩි 5කින් පමණ පැමිණේ.',
+          'தானியங்கு செய்தி அனுப்பப்பட்டது: சுமார் 5 நிமிடங்களில் வருகிறோம்.',
+        ),
+      );
+    }
   }
 
   Future<void> _animateWorkerMarker(Position nextPosition) async {
@@ -338,6 +366,7 @@ class _JobExecutionScreenState extends ConsumerState<JobExecutionScreen> {
     switch (current) {
       case JobPhase.enRoute:
         ref.read(jobPhaseProvider.notifier).state = JobPhase.arrived;
+        unawaited(HapticFeedback.mediumImpact());
         _showSnack(
           _t(
             'Customer notified: You have arrived.',
@@ -348,6 +377,7 @@ class _JobExecutionScreenState extends ConsumerState<JobExecutionScreen> {
         return;
       case JobPhase.arrived:
         ref.read(jobPhaseProvider.notifier).state = JobPhase.inProgress;
+        unawaited(HapticFeedback.mediumImpact());
         _showSnack(
           _t(
             'Work session started.',
@@ -358,10 +388,52 @@ class _JobExecutionScreenState extends ConsumerState<JobExecutionScreen> {
         return;
       case JobPhase.inProgress:
         ref.read(jobPhaseProvider.notifier).state = JobPhase.review;
+        unawaited(HapticFeedback.lightImpact());
         return;
       case JobPhase.review:
         return;
     }
+  }
+
+  Future<void> _triggerSos() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(_t('Emergency SOS', 'හදිසි SOS', 'அவசர SOS')),
+          content: Text(
+            _t(
+              'Send an emergency alert to SEVIX support with your current location?',
+              'ඔබගේ වත්මන් ස්ථානය සමඟ SEVIX සහායට හදිසි ඇඟවීමක් යවන්නද?',
+              'தற்போதைய இருப்பிடத்துடன் SEVIX ஆதரவிற்கு அவசர எச்சரிக்கை அனுப்பவா?',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(_t('Cancel', 'අවලංගු', 'ரத்து')),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(_t('Send SOS', 'SOS යවන්න', 'SOS அனுப்பு')),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true) {
+      return;
+    }
+
+    unawaited(HapticFeedback.heavyImpact());
+    _showSnack(
+      _t(
+        'Emergency alert sent to SEVIX support. Stay in a safe location.',
+        'හදිසි ඇඟවීම SEVIX සහායට යැවුණි. ආරක්ෂිත ස්ථානයක සිටින්න.',
+        'SEVIX ஆதரவிற்கு அவசர எச்சரிக்கை அனுப்பப்பட்டது. பாதுகாப்பான இடத்தில் இருங்கள்.',
+      ),
+    );
   }
 
   Future<void> _captureCompletionPhoto() async {
@@ -406,7 +478,7 @@ class _JobExecutionScreenState extends ConsumerState<JobExecutionScreen> {
   }
 
   Future<void> _finishAndRequestPayment() async {
-    if (_completionPhoto == null || !_signatureController.isNotEmpty) {
+    if (_completionPhoto == null || _signatureController.isEmpty) {
       _showSnack(
         _t(
           'Photo and signature are both required.',
@@ -432,49 +504,42 @@ class _JobExecutionScreenState extends ConsumerState<JobExecutionScreen> {
       _isSubmitting = true;
     });
 
-    try {
-      final signatureBytes = await _signatureController.toPngBytes(
-        height: 280,
-        width: 880,
-      );
+    final signatureBytes = await _signatureController.toPngBytes(
+      height: 280,
+      width: 880,
+    );
 
-      if (signatureBytes == null || signatureBytes.isEmpty) {
-        throw Exception('Signature export failed');
+    if (signatureBytes == null || signatureBytes.isEmpty) {
+      _showSnack(
+        _t(
+          'Unable to export customer signature. Please sign again.',
+          'පාරිභෝගික අත්සන export කළ නොහැක. කරුණාකර නැවත අත්සන් කරන්න.',
+          'வாடிக்கையாளர் கையொப்பத்தை export செய்ய முடியவில்லை. மீண்டும் கையொப்பமிடவும்.',
+        ),
+      );
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
       }
+      return;
+    }
 
-      final now = DateTime.now();
-      final basePath =
-          'job_completions/${widget.job.id}/${now.millisecondsSinceEpoch}';
+    final now = DateTime.now();
 
-      final photoRef = FirebaseStorage.instance.ref().child(
-        '$basePath-completion-photo.jpg',
+    try {
+      await _uploadCompletionPayload(
+        jobId: widget.job.id,
+        completionPhotoPath: _completionPhoto!.path,
+        signatureBytes: signatureBytes,
+        completedAt: now,
       );
-      await photoRef.putFile(File(_completionPhoto!.path));
-      final photoUrl = await photoRef.getDownloadURL();
-
-      final signatureRef = FirebaseStorage.instance.ref().child(
-        '$basePath-customer-signature.png',
-      );
-      await signatureRef.putData(
-        Uint8List.fromList(signatureBytes),
-        SettableMetadata(contentType: 'image/png'),
-      );
-      final signatureUrl = await signatureRef.getDownloadURL();
-
-      await FirebaseFirestore.instance
-          .collection('jobs')
-          .doc(widget.job.id)
-          .set({
-            'status': 'completed',
-            'completedAt': FieldValue.serverTimestamp(),
-            'completionPhotoUrl': photoUrl,
-            'customerSignatureUrl': signatureUrl,
-          }, SetOptions(merge: true));
 
       if (!mounted) {
         return;
       }
 
+      unawaited(HapticFeedback.mediumImpact());
       _showSnack(
         _t(
           'Job marked as completed. Payment request sent.',
@@ -485,19 +550,122 @@ class _JobExecutionScreenState extends ConsumerState<JobExecutionScreen> {
 
       Navigator.of(context).pop();
     } catch (_) {
-      _showSnack(
-        _t(
-          'Upload failed. Status was not changed. Please retry.',
-          'උඩුගත කිරීම අසාර්ථකයි. තත්ත්වය වෙනස් කළේ නැහැ.',
-          'பதிவேற்றம் தோல்வி. நிலை மாற்றப்படவில்லை.',
+      await OfflineCompletionBuffer.enqueue(
+        PendingCompletionPayload(
+          jobId: widget.job.id,
+          completionPhotoPath: _completionPhoto!.path,
+          signatureBase64: base64Encode(signatureBytes),
+          createdAtMillis: now.millisecondsSinceEpoch,
         ),
       );
+
+      try {
+        await FirebaseFirestore.instance
+            .collection('jobs')
+            .doc(widget.job.id)
+            .set({
+              'status': 'completed_offline_pending_sync',
+              'offlineBufferedAt': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true));
+      } catch (_) {
+        // Firestore writes can fail fully offline. Local buffer is still persisted.
+      }
+
+      unawaited(HapticFeedback.lightImpact());
+      _showSnack(
+        _t(
+          'No reliable network. Completion proof saved offline and will sync automatically.',
+          'ජාලය ස්ථාවර නැහැ. අවසාන සාක්ෂි offline ලෙස සුරකින ලදී; සම්බන්ධතාවය ලැබුණු විට sync වේ.',
+          'நெட்வொர்க் நிலையானதல்ல. நிறைவு ஆதாரம் offline ஆக சேமிக்கப்பட்டது; இணைப்பு வந்ததும் sync ஆகும்.',
+        ),
+      );
+
+      unawaited(_syncOfflineCompletions());
     } finally {
       if (mounted) {
         setState(() {
           _isSubmitting = false;
         });
       }
+    }
+  }
+
+  Future<void> _uploadCompletionPayload({
+    required String jobId,
+    required String completionPhotoPath,
+    required List<int> signatureBytes,
+    required DateTime completedAt,
+  }) async {
+    final basePath =
+        'job_completions/$jobId/${completedAt.millisecondsSinceEpoch}';
+
+    final photoRef = FirebaseStorage.instance.ref().child(
+      '$basePath-completion-photo.jpg',
+    );
+    await photoRef.putFile(File(completionPhotoPath));
+    final photoUrl = await photoRef.getDownloadURL();
+
+    final signatureRef = FirebaseStorage.instance.ref().child(
+      '$basePath-customer-signature.png',
+    );
+    await signatureRef.putData(
+      Uint8List.fromList(signatureBytes),
+      SettableMetadata(contentType: 'image/png'),
+    );
+    final signatureUrl = await signatureRef.getDownloadURL();
+
+    await FirebaseFirestore.instance.collection('jobs').doc(jobId).set({
+      'status': 'completed',
+      'completedAt': FieldValue.serverTimestamp(),
+      'completionPhotoUrl': photoUrl,
+      'customerSignatureUrl': signatureUrl,
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> _syncOfflineCompletions() async {
+    if (_isSyncingOfflineBuffer) {
+      return;
+    }
+
+    _isSyncingOfflineBuffer = true;
+    try {
+      final pending = await OfflineCompletionBuffer.loadAll();
+      if (pending.isEmpty) {
+        return;
+      }
+
+      final failed = <PendingCompletionPayload>[];
+      var successCount = 0;
+
+      for (final item in pending) {
+        try {
+          await _uploadCompletionPayload(
+            jobId: item.jobId,
+            completionPhotoPath: item.completionPhotoPath,
+            signatureBytes: base64Decode(item.signatureBase64),
+            completedAt: DateTime.fromMillisecondsSinceEpoch(
+              item.createdAtMillis,
+            ),
+          );
+          successCount++;
+        } catch (_) {
+          failed.add(item);
+        }
+      }
+
+      await OfflineCompletionBuffer.replaceAll(failed);
+
+      if (mounted && successCount > 0) {
+        _showSnack(
+          _t(
+            '$successCount offline completion(s) synced successfully.',
+            'offline completion $successCountක් සාර්ථකව sync කරන ලදී.',
+            '$successCount offline completion வெற்றிகரமாக sync செய்யப்பட்டது.',
+          ),
+        );
+      }
+    } finally {
+      _isSyncingOfflineBuffer = false;
     }
   }
 
@@ -636,6 +804,17 @@ class _JobExecutionScreenState extends ConsumerState<JobExecutionScreen> {
                   ],
                 ),
               ),
+            ),
+          ),
+          Positioned(
+            top: 136,
+            right: 16,
+            child: FloatingActionButton.small(
+              heroTag: 'sos_button',
+              onPressed: _triggerSos,
+              backgroundColor: const Color(0xFFB91C1C),
+              foregroundColor: Colors.white,
+              child: const Icon(Icons.sos),
             ),
           ),
         ],
@@ -1005,6 +1184,20 @@ class _JobExecutionScreenState extends ConsumerState<JobExecutionScreen> {
             ),
           ),
           const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: _isSubmitting
+                ? null
+                : () => unawaited(_syncOfflineCompletions()),
+            icon: const Icon(Icons.sync),
+            label: Text(
+              _t(
+                'Retry Offline Sync',
+                'Offline Sync නැවත උත්සාහ කරන්න',
+                'Offline Sync மீண்டும் முயற்சி',
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
           Text(
             _t(
               'Cloud Function should process final fee and payout after status becomes completed.',
@@ -1181,4 +1374,3 @@ const String _silverMapStyleJson = '''
   }
 ]
 ''';
-

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:sevix_worker/features/profile/identity_verification_screen.dart';
+import 'package:sevix_worker/features/professional/trust_score_detail_screen.dart';
 
 class ProfessionalProfileScreen extends StatefulWidget {
   final String selectedLanguage;
@@ -42,6 +43,32 @@ class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> {
     'Mechanic',
   ];
 
+  String _trustBadgeLabel(double score) {
+    if (score >= 4.8) {
+      return _t('Top Rated', 'ඉහළ ශ්‍රේණිගත', 'மிக உயர்ந்த மதிப்பீடு');
+    }
+    if (score >= 4.5) {
+      return _t('Trusted Pro', 'විශ්වාසිත වෘත්තිකයා', 'நம்பகமான நிபுணர்');
+    }
+    if (score >= 4.0) {
+      return _t('Rising Pro', 'වර්ධනය වන වෘත්තිකයා', 'வளரும் நிபுணர்');
+    }
+    return _t('New Worker', 'නව සේවකයා', 'புதிய பணியாளர்');
+  }
+
+  Color _trustBadgeColor(double score) {
+    if (score >= 4.8) {
+      return const Color(0xFF16A34A);
+    }
+    if (score >= 4.5) {
+      return const Color(0xFF2563EB);
+    }
+    if (score >= 4.0) {
+      return const Color(0xFFCA8A04);
+    }
+    return const Color(0xFF64748B);
+  }
+
   Future<void> _addGalleryImage() async {
     final file = await _picker.pickImage(
       source: ImageSource.gallery,
@@ -64,6 +91,9 @@ class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> {
       'Professionalism': 4.8,
       'Value': 4.5,
     };
+    final trustScore = ratings.values.reduce((a, b) => a + b) / ratings.length;
+    final trustLabel = _trustBadgeLabel(trustScore);
+    final trustColor = _trustBadgeColor(trustScore);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F6FC),
@@ -75,6 +105,79 @@ class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> {
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
+          Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const TrustScoreDetailScreen(),
+                  ),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: trustColor.withValues(alpha: 0.14),
+                      child: Icon(Icons.verified, color: trustColor),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _t(
+                              'Trust Score Badge',
+                              'විශ්වාස ශ්‍රේණිගත සලකුණ',
+                              'நம்பிக்கை மதிப்பீட்டு அடையாளம்',
+                            ),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${trustScore.toStringAsFixed(1)} / 5.0 - $trustLabel',
+                            style: const TextStyle(color: Color(0xFF334155)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: trustColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: trustColor.withValues(alpha: 0.45),
+                        ),
+                      ),
+                      child: Text(
+                        trustLabel,
+                        style: TextStyle(
+                          color: trustColor,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
           Card(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
@@ -314,4 +417,3 @@ class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> {
     );
   }
 }
-

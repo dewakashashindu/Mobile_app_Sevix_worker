@@ -1,12 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sevix_worker/features/jobs/bid_status_screen.dart';
 import 'package:sevix_worker/core/press_scale.dart';
 import 'package:sevix_worker/features/jobs/worker_job.dart';
+import 'package:sevix_worker/features/professional/professional_providers.dart';
 
-class SubmitBidScreen extends StatefulWidget {
+class SubmitBidScreen extends ConsumerStatefulWidget {
   final WorkerJob job;
   final String selectedLanguage;
 
@@ -17,10 +20,10 @@ class SubmitBidScreen extends StatefulWidget {
   });
 
   @override
-  State<SubmitBidScreen> createState() => _SubmitBidScreenState();
+  ConsumerState<SubmitBidScreen> createState() => _SubmitBidScreenState();
 }
 
-class _SubmitBidScreenState extends State<SubmitBidScreen> {
+class _SubmitBidScreenState extends ConsumerState<SubmitBidScreen> {
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _etaController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
@@ -104,6 +107,7 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
     super.initState();
     _amountController.text = widget.job.budgetLkr.toString();
     _etaController.text = widget.job.estimatedTime;
+    unawaited(ref.read(aiBidSuggestionProvider.notifier).load(widget.job));
   }
 
   @override
@@ -170,6 +174,7 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
     );
     await _showSuccessCheckAnimation();
     if (!mounted) return;
+    unawaited(HapticFeedback.mediumImpact());
 
     final statuses = ['Pending', 'Accepted', 'Rejected'];
     final status = statuses[DateTime.now().second % 3];
@@ -190,7 +195,12 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final range = _competitiveRange;
+    final aiState = ref.watch(aiBidSuggestionProvider);
+    final aiSuggestion = aiState.suggestion;
+    final range = aiSuggestion == null
+        ? _competitiveRange
+        : (aiSuggestion.minLkr, aiSuggestion.maxLkr);
+    final suggestedPrice = aiSuggestion?.recommendedLkr ?? _suggestedBidPrice;
 
     return Scaffold(
       appBar: AppBar(
@@ -239,12 +249,13 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
                 border: Border.all(color: const Color(0xFFCFE0FF)),
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Icon(Icons.auto_awesome, color: Color(0xFF1D4ED8)),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '${_t('Competitive Range', 'තරඟකාරී පරාසය', 'போட்டித்திறன் வரம்பு')}: Rs. ${range.$1} - Rs. ${range.$2}\n${_t('Suggested bid', 'නිර්දේශිත ලංසුව', 'பரிந்துரைக்கப்பட்ட ஏலம்')}: Rs. $_suggestedBidPrice',
+                      '${aiState.loading ? 'Gemini AI: Analyzing...' : 'Gemini AI'}\n${_t('Recommended Range', 'නිර්දේශිත පරාසය', 'பரிந்துரைக்கப்பட்ட வரம்பு')}: Rs. ${range.$1} - Rs. ${range.$2}\n${_t('Suggested bid', 'නිර්දේශිත ලංසුව', 'பரிந்துரைக்கப்பட்ட ஏலம்')}: Rs. $suggestedPrice',
                       style: const TextStyle(
                         color: Color(0xFF1E3A8A),
                         fontWeight: FontWeight.w700,
@@ -253,10 +264,16 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
                   ),
                   TextButton(
                     onPressed: () {
-                      _amountController.text = _suggestedBidPrice.toString();
+                      _amountController.text = suggestedPrice.toString();
                       setState(() {});
                     },
-                    child: Text(_t('Use', 'භාවිතා කරන්න', 'பயன்படுத்து')),
+                    child: Text(
+                      _t(
+                        'Apply Suggested',
+                        'නිර්දේශිත මුදල යොදන්න',
+                        'பரிந்துரையைப் பயன்படுத்து',
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -412,4 +429,3 @@ class _SuccessCheckDialogState extends State<_SuccessCheckDialog>
     );
   }
 }
-

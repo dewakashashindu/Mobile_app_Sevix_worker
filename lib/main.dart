@@ -19,6 +19,12 @@ import 'package:sevix_worker/features/profile/work_history_screen.dart';
 import 'package:sevix_worker/features/profile/professional_profile_screen.dart';
 import 'package:sevix_worker/features/execution/job_execution_screen.dart';
 import 'package:sevix_worker/features/wallet/payment_history_screen.dart';
+import 'package:sevix_worker/features/professional/analytics_screen.dart';
+import 'package:sevix_worker/features/professional/schedule_calendar_screen.dart';
+import 'package:sevix_worker/features/professional/portfolio_management_screen.dart';
+import 'package:sevix_worker/features/professional/subscription_plan_screen.dart';
+import 'package:sevix_worker/features/professional/featured_listing_screen.dart';
+import 'package:sevix_worker/features/professional/trust_score_detail_screen.dart';
 
 void main() {
   runApp(const ProviderScope(child: MyApp()));
@@ -327,6 +333,42 @@ class _RootScreenState extends State<_RootScreen> {
             ProfessionalProfileScreen(selectedLanguage: _language ?? 'en'),
       ),
     );
+  }
+
+  void _openAnalyticsDashboard() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const AnalyticsScreen()));
+  }
+
+  void _openScheduleCalendar() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const ScheduleCalendarScreen()));
+  }
+
+  void _openPortfolioManager() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const PortfolioManagementScreen()),
+    );
+  }
+
+  void _openSubscriptionPlans() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const SubscriptionPlanScreen()));
+  }
+
+  void _openFeaturedListing() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const FeaturedListingScreen()));
+  }
+
+  void _openTrustScoreDetails() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const TrustScoreDetailScreen()));
   }
 
   void _openPaymentHistory() {
@@ -1204,6 +1246,74 @@ class _RootScreenState extends State<_RootScreen> {
                             icon: Icons.payments_outlined,
                             color: const Color(0xFF0EA5E9),
                             onTap: _openPaymentHistory,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _shortcutCard(
+                            title: 'Analytics',
+                            subtitle: 'Earnings & ratings',
+                            icon: Icons.insights_outlined,
+                            color: const Color(0xFF1D4ED8),
+                            onTap: _openAnalyticsDashboard,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _shortcutCard(
+                            title: 'Schedule',
+                            subtitle: 'Calendar view',
+                            icon: Icons.calendar_month_outlined,
+                            color: const Color(0xFF16A34A),
+                            onTap: _openScheduleCalendar,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _shortcutCard(
+                            title: 'Portfolio',
+                            subtitle: 'Project photos',
+                            icon: Icons.photo_library_outlined,
+                            color: const Color(0xFF9333EA),
+                            onTap: _openPortfolioManager,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _shortcutCard(
+                            title: 'Plans',
+                            subtitle: 'Subscription tiers',
+                            icon: Icons.workspace_premium_outlined,
+                            color: const Color(0xFFF59E0B),
+                            onTap: _openSubscriptionPlans,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _shortcutCard(
+                            title: 'Boost',
+                            subtitle: 'Featured listing',
+                            icon: Icons.campaign_outlined,
+                            color: const Color(0xFF0EA5E9),
+                            onTap: _openFeaturedListing,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _shortcutCard(
+                            title: 'Trust',
+                            subtitle: 'Score details',
+                            icon: Icons.verified_user,
+                            color: const Color(0xFF2563EB),
+                            onTap: _openTrustScoreDetails,
                           ),
                         ),
                       ],
