@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'package:sevix_worker/features/auth/language_select_screen.dart';
 import 'package:sevix_worker/features/auth/login_screen.dart';
@@ -353,6 +355,167 @@ class _RootScreenState extends State<_RootScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _updateCurrentLocationFromDevice() async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Location services are disabled.')),
+        );
+        return;
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Location permission is required to use GPS.'),
+          ),
+        );
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _currentLocation =
+            '${position.latitude.toStringAsFixed(5)}, ${position.longitude.toStringAsFixed(5)}';
+      });
+
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Current location updated from GPS.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Unable to fetch current location.')),
+      );
+    }
+  }
+
+  LatLng? _parseLatLngFromLocationText(String text) {
+    final parts = text.split(',');
+    if (parts.length < 2) {
+      return null;
+    }
+
+    final lat = double.tryParse(parts[0].trim());
+    final lng = double.tryParse(parts[1].trim());
+    if (lat == null || lng == null) {
+      return null;
+    }
+
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      return null;
+    }
+
+    return LatLng(lat, lng);
+  }
+
+  Future<String?> _pickLocationFromMap() async {
+    const fallback = LatLng(6.9271, 79.8612);
+    final initial = _parseLatLngFromLocationText(_currentLocation) ?? fallback;
+
+    final picked = await showDialog<LatLng>(
+      context: context,
+      builder: (_) => _LocationMapPickerDialog(initialPosition: initial),
+    );
+
+    if (picked == null) {
+      return null;
+    }
+
+    return '${picked.latitude.toStringAsFixed(5)}, ${picked.longitude.toStringAsFixed(5)}';
+  }
+
+  Future<void> _openCurrentLocationChanger() async {
+    final controller = TextEditingController(text: _currentLocation);
+    const useDeviceLocationAction = '__use_device_location__';
+    const pickOnMapAction = '__pick_on_map__';
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Change Current Location'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Location',
+            hintText: 'City, area, or coordinates',
+          ),
+          textInputAction: TextInputAction.done,
+          onSubmitted: (value) {
+            Navigator.of(dialogContext).pop(value.trim());
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(useDeviceLocationAction),
+            child: const Text('Use GPS'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(pickOnMapAction),
+            child: const Text('Pick on Map'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    controller.dispose();
+
+    if (result == null) {
+      return;
+    }
+
+    if (result == useDeviceLocationAction) {
+      await _updateCurrentLocationFromDevice();
+      return;
+    }
+
+    if (result == pickOnMapAction) {
+      final mapValue = await _pickLocationFromMap();
+      if (mapValue == null || !mounted) {
+        return;
+      }
+
+      setState(() {
+        _currentLocation = mapValue;
+      });
+      return;
+    }
+
+    final trimmed = result.trim();
+    if (trimmed.isEmpty) {
+      return;
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      _currentLocation = trimmed;
+    });
   }
 
   @override
@@ -1061,9 +1224,24 @@ class _RootScreenState extends State<_RootScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Current Location',
-                          style: TextStyle(fontSize: 12, color: textSecondary),
+                        Row(
+                          children: [
+                            Text(
+                              'Current Location',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: textSecondary,
+                              ),
+                            ),
+                            const Spacer(),
+                            TextButton.icon(
+                              onPressed: _openCurrentLocationChanger,
+                              icon: const Icon(
+                                Icons.edit_location_alt_outlined,
+                              ),
+                              label: const Text('Change'),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -1384,3 +1562,80 @@ class _RootScreenState extends State<_RootScreen> {
   }
 }
 
+class _LocationMapPickerDialog extends StatefulWidget {
+  final LatLng initialPosition;
+
+  const _LocationMapPickerDialog({required this.initialPosition});
+
+  @override
+  State<_LocationMapPickerDialog> createState() =>
+      _LocationMapPickerDialogState();
+}
+
+class _LocationMapPickerDialogState extends State<_LocationMapPickerDialog> {
+  late LatLng _selectedPosition;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedPosition = widget.initialPosition;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Pick Location on Map'),
+      content: SizedBox(
+        width: 360,
+        height: 340,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: GoogleMap(
+                  initialCameraPosition: CameraPosition(
+                    target: widget.initialPosition,
+                    zoom: 13,
+                  ),
+                  markers: {
+                    Marker(
+                      markerId: const MarkerId('selected-location'),
+                      position: _selectedPosition,
+                    ),
+                  },
+                  onTap: (latLng) {
+                    setState(() {
+                      _selectedPosition = latLng;
+                    });
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '${_selectedPosition.latitude.toStringAsFixed(5)}, ${_selectedPosition.longitude.toStringAsFixed(5)}',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Tap the map to move the marker.',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_selectedPosition),
+          child: const Text('Use This Location'),
+        ),
+      ],
+    );
+  }
+}
