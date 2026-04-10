@@ -650,8 +650,6 @@ class _RootScreenState extends State<_RootScreen>
     // Main authenticated app
     final theme = Theme.of(context);
     final textPrimary = theme.textTheme.bodyLarge?.color ?? Colors.black87;
-    final textSecondary =
-        theme.textTheme.bodyMedium?.color?.withOpacity(0.7) ?? Colors.black54;
     final workerJobs = _toWorkerJobs();
     final matchingLeads = workerJobs
         .where((job) => job.distanceKm >= 1 && job.distanceKm <= 50)
@@ -661,6 +659,14 @@ class _RootScreenState extends State<_RootScreen>
     final earningsValue = _earningsWindow == 'today'
         ? _earnings.today
         : _earnings.week;
+    final baseline = _earningsWindow == 'today'
+        ? (_earnings.week / 7).round()
+        : _earnings.month;
+    final delta = earningsValue - baseline;
+    final deltaSign = delta >= 0 ? '+' : '-';
+    final deltaPercent = baseline == 0
+        ? 0
+        : ((delta.abs() / baseline) * 100).round();
 
     Widget body;
     switch (_activeTab) {
@@ -859,116 +865,82 @@ class _RootScreenState extends State<_RootScreen>
                                 ),
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _glassCard(
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Earnings Summary',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15,
+                            const SizedBox(height: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 8,
                               ),
-                            ),
-                            const SizedBox(height: 10),
-                            SegmentedButton<String>(
-                              segments: const [
-                                ButtonSegment<String>(
-                                  value: 'today',
-                                  label: Text('Today'),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.55),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: const Color(0xFFCBD8EE),
                                 ),
-                                ButtonSegment<String>(
-                                  value: 'week',
-                                  label: Text('This Week'),
-                                ),
-                              ],
-                              selected: {_earningsWindow},
-                              onSelectionChanged: (selection) {
-                                setState(() {
-                                  _earningsWindow = selection.first;
-                                });
-                              },
-                            ),
-                            const SizedBox(height: 10),
-                            AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 420),
-                              switchInCurve: kGlobalAnimationCurve,
-                              switchOutCurve: Curves.easeInCubic,
-                              transitionBuilder: (child, animation) {
-                                final offset = Tween<Offset>(
-                                  begin: const Offset(0.0, 0.2),
-                                  end: Offset.zero,
-                                ).animate(animation);
-                                return FadeTransition(
-                                  opacity: animation,
-                                  child: SlideTransition(
-                                    position: offset,
-                                    child: child,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.my_location,
+                                        size: 15,
+                                        color: Color(0xFF0B1533),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      const Text(
+                                        'Worker Location',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      TextButton.icon(
+                                        onPressed: _openCurrentLocationChanger,
+                                        style: TextButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          minimumSize: Size.zero,
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                        ),
+                                        icon: const Icon(
+                                          Icons.edit_location_alt_outlined,
+                                          size: 16,
+                                        ),
+                                        label: const Text('Edit'),
+                                      ),
+                                    ],
                                   ),
-                                );
-                              },
-                              child: Text(
-                                'Rs. $earningsValue',
-                                key: ValueKey<String>(_earningsWindow),
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w800,
-                                  color: Color(0xFF0B1533),
-                                ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _currentLocation,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF334155),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Service radius: $_serviceRadius km',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF10B981),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                            const SizedBox(height: 10),
-                            _AnimatedEarningsBars(
-                              value: _earningsWindow == 'today'
-                                  ? _earnings.today
-                                  : _earnings.week,
-                              maxValue: _earnings.week,
                             ),
                           ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    CircleAvatar(
-                      radius: 42,
-                      backgroundColor: theme.dividerColor,
-                      child: Icon(
-                        Icons.person,
-                        size: 46,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(
-                          _userName,
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            color: textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _workerType,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
@@ -989,30 +961,6 @@ class _RootScreenState extends State<_RootScreen>
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
                           ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: _openProfilePortfolio,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF7C3AED),
-                          side: const BorderSide(
-                            color: Color(0xFF7C3AED),
-                            width: 1.6,
-                          ),
-                          backgroundColor: const Color(0xFFF7F3FF),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        icon: const Icon(Icons.verified_user_outlined),
-                        label: const Text(
-                          'Open Profile & Portfolio',
-                          style: TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
                     ),
@@ -1055,6 +1003,216 @@ class _RootScreenState extends State<_RootScreen>
                           ),
                         ),
                       ),
+                    const SizedBox(height: 10),
+                    _glassCard(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFDBEAFE),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(
+                                    Icons.auto_graph_rounded,
+                                    size: 18,
+                                    color: Color(0xFF1D4ED8),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                const Expanded(
+                                  child: Text(
+                                    'Earnings Summary',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: delta >= 0
+                                        ? const Color(0xFFDCFCE7)
+                                        : const Color(0xFFFEE2E2),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Text(
+                                    '$deltaSign$deltaPercent%',
+                                    style: TextStyle(
+                                      color: delta >= 0
+                                          ? const Color(0xFF166534)
+                                          : const Color(0xFF991B1B),
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.fromLTRB(
+                                14,
+                                12,
+                                14,
+                                12,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(14),
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFF0F172A),
+                                    Color(0xFF1E3A8A),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(
+                                      0xFF1E3A8A,
+                                    ).withValues(alpha: 0.28),
+                                    blurRadius: 14,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _earningsWindow == 'today'
+                                        ? 'Today\'s earnings'
+                                        : 'Weekly earnings',
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.78,
+                                      ),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 420),
+                                    switchInCurve: kGlobalAnimationCurve,
+                                    switchOutCurve: Curves.easeInCubic,
+                                    transitionBuilder: (child, animation) {
+                                      final offset = Tween<Offset>(
+                                        begin: const Offset(0.0, 0.2),
+                                        end: Offset.zero,
+                                      ).animate(animation);
+                                      return FadeTransition(
+                                        opacity: animation,
+                                        child: SlideTransition(
+                                          position: offset,
+                                          child: child,
+                                        ),
+                                      );
+                                    },
+                                    child: Text(
+                                      'Rs. $earningsValue',
+                                      key: ValueKey<String>(_earningsWindow),
+                                      style: const TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.white,
+                                        letterSpacing: 0.2,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            SegmentedButton<String>(
+                              segments: const [
+                                ButtonSegment<String>(
+                                  value: 'today',
+                                  label: Text('Today'),
+                                ),
+                                ButtonSegment<String>(
+                                  value: 'week',
+                                  label: Text('This Week'),
+                                ),
+                              ],
+                              selected: {_earningsWindow},
+                              onSelectionChanged: (selection) {
+                                HapticFeedback.lightImpact();
+                                setState(() {
+                                  _earningsWindow = selection.first;
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _earningsChip(
+                                    title: 'Pending',
+                                    value: 'Rs. ${_earnings.pending}',
+                                    icon: Icons.schedule,
+                                    color: const Color(0xFFF59E0B),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _earningsChip(
+                                    title: 'Completed',
+                                    value: '${_earnings.completedJobs}',
+                                    icon: Icons.task_alt,
+                                    color: const Color(0xFF10B981),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _earningsChip(
+                                    title: 'Monthly',
+                                    value: 'Rs. ${_earnings.month}',
+                                    icon: Icons.calendar_month,
+                                    color: const Color(0xFF2563EB),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _openProfilePortfolio,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF7C3AED),
+                          side: const BorderSide(
+                            color: Color(0xFF7C3AED),
+                            width: 1.6,
+                          ),
+                          backgroundColor: const Color(0xFFF7F3FF),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: const Icon(Icons.verified_user_outlined),
+                        label: const Text(
+                          'Open Profile & Portfolio',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 10),
                     SizedBox(
                       width: double.infinity,
@@ -1342,66 +1500,6 @@ class _RootScreenState extends State<_RootScreen>
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _glassCard(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              'Current Location',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: textSecondary,
-                              ),
-                            ),
-                            const Spacer(),
-                            TextButton.icon(
-                              onPressed: _openCurrentLocationChanger,
-                              icon: const Icon(
-                                Icons.edit_location_alt_outlined,
-                              ),
-                              label: const Text('Change'),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _currentLocation,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.radio_button_on,
-                              color: Color(0xFF10B981),
-                              size: 16,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Service radius: $_serviceRadius km',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF10B981),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
         );
@@ -1660,6 +1758,48 @@ class _RootScreenState extends State<_RootScreen>
     );
   }
 
+  Widget _earningsChip({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF64748B),
+            ),
+          ),
+          const SizedBox(height: 1),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLiveStatusToggle() {
     return SizedBox(
       width: 86,
@@ -1781,69 +1921,6 @@ class _LivePulsePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _LivePulsePainter oldDelegate) {
     return oldDelegate.progress != progress || oldDelegate.color != color;
-  }
-}
-
-class _AnimatedEarningsBars extends StatelessWidget {
-  final int value;
-  final int maxValue;
-
-  const _AnimatedEarningsBars({required this.value, required this.maxValue});
-
-  @override
-  Widget build(BuildContext context) {
-    final safeMax = maxValue <= 0 ? 1 : maxValue;
-    final ratio = (value / safeMax).clamp(0.0, 1.0);
-
-    return Row(
-      children: [
-        Expanded(
-          child: _bar(ratio: ratio, color: const Color(0xFF0B1533)),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _bar(
-            ratio: (ratio * 0.82).clamp(0.0, 1.0),
-            color: const Color(0xFF1D4ED8),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _bar(
-            ratio: (ratio * 0.66).clamp(0.0, 1.0),
-            color: const Color(0xFF38BDF8),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _bar({required double ratio, required Color color}) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: SizedBox(
-        height: 8,
-        child: Stack(
-          children: [
-            Container(color: const Color(0xFFE2E8F0)),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TweenAnimationBuilder<double>(
-                duration: const Duration(milliseconds: 480),
-                curve: kGlobalAnimationCurve,
-                tween: Tween<double>(begin: 0, end: ratio),
-                builder: (context, animated, _) {
-                  return FractionallySizedBox(
-                    widthFactor: animated,
-                    child: Container(color: color),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 
