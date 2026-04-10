@@ -1,3 +1,6 @@
+import 'dart:math' as math;
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -374,6 +377,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     final formValid = _formKey.currentState?.validate() ?? false;
     if (_workerTypes.isEmpty) {
+      HapticFeedback.vibrate();
       _showSnack(
         _t(
           'Select at least one skill',
@@ -384,6 +388,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       return;
     }
     if (_experienceYears.isEmpty) {
+      HapticFeedback.vibrate();
       _showSnack(
         _t(
           'Select experience range',
@@ -393,7 +398,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
       return;
     }
-    if (!formValid) return;
+    if (!formValid) {
+      HapticFeedback.vibrate();
+      return;
+    }
 
     setState(() {
       _isSubmitting = true;
@@ -438,35 +446,42 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildSectionCard({required String title, required Widget child}) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFE5EAF2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.72),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF93C5FD).withValues(alpha: 0.16),
+                blurRadius: 20,
+                spreadRadius: 0,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.w800,
-              fontSize: 12,
-              color: Color(0xFF64748B),
-              letterSpacing: 0.35,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                  color: Color(0xFF64748B),
+                  letterSpacing: 0.35,
+                ),
+              ),
+              const SizedBox(height: 12),
+              child,
+            ],
           ),
-          const SizedBox(height: 12),
-          child,
-        ],
+        ),
       ),
     );
   }
@@ -531,24 +546,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          '$percent%',
-                          style: const TextStyle(
-                            color: Color(0xFF0B1533),
-                            fontWeight: FontWeight.w900,
-                            fontSize: 18,
-                          ),
-                        ),
+                        _CompletionRingsTile(percent: percent),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    LinearProgressIndicator(
-                      value: percent / 100,
-                      minHeight: 8,
-                      borderRadius: BorderRadius.circular(12),
-                      backgroundColor: const Color(0xFFDBE5F4),
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        Color(0xFF0B1533),
+                    const SizedBox(height: 12),
+                    Text(
+                      _t(
+                        'Target: 90%+ for better lead quality',
+                        'ඉහළ තත්ත්වයේ ලීඩ් සඳහා 90%+ ඉලක්කගත කරන්න',
+                        'மேம்பட்ட லீட்களுக்கு 90%+ இலக்கு வையுங்கள்',
+                      ),
+                      style: const TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -851,5 +862,104 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
       ),
     );
+  }
+}
+
+class _CompletionRingsTile extends StatelessWidget {
+  final int percent;
+
+  const _CompletionRingsTile({required this.percent});
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = (percent / 100).clamp(0.0, 1.0);
+    final ringColor = Color.lerp(
+      const Color(0xFFF59E0B),
+      const Color(0xFF10B981),
+      progress,
+    )!;
+
+    return Container(
+      width: 84,
+      height: 84,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
+      ),
+      child: Center(
+        child: CustomPaint(
+          size: const Size(62, 62),
+          painter: _CompletionRingsPainter(
+            progress: progress,
+            ringColor: ringColor,
+          ),
+          child: Center(
+            child: Text(
+              '$percent%',
+              style: const TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 12,
+                color: Color(0xFF0B1533),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CompletionRingsPainter extends CustomPainter {
+  final double progress;
+  final Color ringColor;
+
+  const _CompletionRingsPainter({
+    required this.progress,
+    required this.ringColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final rings = [
+      (radius: size.width * 0.45, factor: 1.0, width: 6.0),
+      (radius: size.width * 0.35, factor: 0.78, width: 5.0),
+      (radius: size.width * 0.25, factor: 0.58, width: 4.0),
+    ];
+
+    for (final ring in rings) {
+      final basePaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = ring.width
+        ..strokeCap = StrokeCap.round
+        ..color = const Color(0xFFE5EDF7);
+
+      final activePaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = ring.width
+        ..strokeCap = StrokeCap.round
+        ..shader = SweepGradient(
+          startAngle: -math.pi / 2,
+          endAngle: 3 * math.pi / 2,
+          colors: [ringColor.withValues(alpha: 0.42), ringColor],
+        ).createShader(Rect.fromCircle(center: center, radius: ring.radius));
+
+      final rect = Rect.fromCircle(center: center, radius: ring.radius);
+      canvas.drawArc(rect, 0, 2 * math.pi, false, basePaint);
+      canvas.drawArc(
+        rect,
+        -math.pi / 2,
+        2 * math.pi * (progress * ring.factor).clamp(0.0, 1.0),
+        false,
+        activePaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _CompletionRingsPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.ringColor != ringColor;
   }
 }

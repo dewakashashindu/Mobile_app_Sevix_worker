@@ -1,4 +1,7 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -29,6 +32,8 @@ import 'package:sevix_worker/features/professional/trust_score_detail_screen.dar
 void main() {
   runApp(const ProviderScope(child: MyApp()));
 }
+
+const Curve kGlobalAnimationCurve = Curves.easeOutExpo;
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -123,7 +128,8 @@ class _RootScreen extends StatefulWidget {
   State<_RootScreen> createState() => _RootScreenState();
 }
 
-class _RootScreenState extends State<_RootScreen> {
+class _RootScreenState extends State<_RootScreen>
+    with SingleTickerProviderStateMixin {
   String? _language; // 'en', 'si', 'ta'
   _AuthScreen _authScreen = _AuthScreen.language;
   String _pendingPhoneNumber = '';
@@ -143,10 +149,16 @@ class _RootScreenState extends State<_RootScreen> {
 
   late List<JobRequest> _jobRequests;
   late EarningsData _earnings;
+  late final AnimationController _livePulseController;
 
   @override
   void initState() {
     super.initState();
+    _livePulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1900),
+    )..repeat();
+
     _jobRequests = [
       JobRequest(
         id: '1',
@@ -187,6 +199,12 @@ class _RootScreenState extends State<_RootScreen> {
       pending: 8200,
       completedJobs: 47,
     );
+  }
+
+  @override
+  void dispose() {
+    _livePulseController.dispose();
+    super.dispose();
   }
 
   String _greeting() {
@@ -783,11 +801,7 @@ class _RootScreenState extends State<_RootScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 2,
+                    _glassCard(
                       child: Padding(
                         padding: const EdgeInsets.all(12),
                         child: Column(
@@ -809,14 +823,7 @@ class _RootScreenState extends State<_RootScreen> {
                                     ),
                                   ),
                                 ),
-                                Switch(
-                                  value: _isOnline,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _isOnline = value;
-                                    });
-                                  },
-                                ),
+                                _buildLiveStatusToggle(),
                               ],
                             ),
                             const SizedBox(height: 10),
@@ -857,11 +864,7 @@ class _RootScreenState extends State<_RootScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 2,
+                    _glassCard(
                       child: Padding(
                         padding: const EdgeInsets.all(12),
                         child: Column(
@@ -894,13 +897,39 @@ class _RootScreenState extends State<_RootScreen> {
                               },
                             ),
                             const SizedBox(height: 10),
-                            Text(
-                              'Rs. $earningsValue',
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF0B1533),
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 420),
+                              switchInCurve: kGlobalAnimationCurve,
+                              switchOutCurve: Curves.easeInCubic,
+                              transitionBuilder: (child, animation) {
+                                final offset = Tween<Offset>(
+                                  begin: const Offset(0.0, 0.2),
+                                  end: Offset.zero,
+                                ).animate(animation);
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: SlideTransition(
+                                    position: offset,
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                'Rs. $earningsValue',
+                                key: ValueKey<String>(_earningsWindow),
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF0B1533),
+                                ),
                               ),
+                            ),
+                            const SizedBox(height: 10),
+                            _AnimatedEarningsBars(
+                              value: _earningsWindow == 'today'
+                                  ? _earnings.today
+                                  : _earnings.week,
+                              maxValue: _earnings.week,
                             ),
                           ],
                         ),
@@ -1056,11 +1085,7 @@ class _RootScreenState extends State<_RootScreen> {
               const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 2,
+                child: _glassCard(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -1118,11 +1143,7 @@ class _RootScreenState extends State<_RootScreen> {
               const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 2,
+                child: _glassCard(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -1324,11 +1345,7 @@ class _RootScreenState extends State<_RootScreen> {
               const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 2,
+                child: _glassCard(
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -1458,6 +1475,7 @@ class _RootScreenState extends State<_RootScreen> {
         currentIndex: _activeTab.index,
         type: BottomNavigationBarType.fixed,
         onTap: (index) {
+          HapticFeedback.lightImpact();
           setState(() {
             _activeTab = _TabType.values[index];
           });
@@ -1560,35 +1578,38 @@ class _RootScreenState extends State<_RootScreen> {
     required IconData icon,
     required Color color,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 24, color: color),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: color,
+    return _glassCard(
+      radius: 12,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 24, color: color),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
             ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
-          ),
-        ],
+            const SizedBox(height: 2),
+            Text(
+              title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1603,43 +1624,105 @@ class _RootScreenState extends State<_RootScreen> {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: Colors.white,
-          border: Border.all(color: Colors.grey.shade200),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+      child: _glassCard(
+        radius: 12,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                radius: 15,
+                backgroundColor: color.withValues(alpha: 0.12),
+                child: Icon(icon, size: 16, color: color),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11, color: Colors.grey),
+              ),
+            ],
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CircleAvatar(
-              radius: 15,
-              backgroundColor: color.withOpacity(0.12),
-              child: Icon(icon, size: 16, color: color),
+      ),
+    );
+  }
+
+  Widget _buildLiveStatusToggle() {
+    return SizedBox(
+      width: 86,
+      child: Stack(
+        alignment: Alignment.centerRight,
+        children: [
+          if (_isOnline)
+            RepaintBoundary(
+              child: IgnorePointer(
+                child: SizedBox(
+                  width: 74,
+                  height: 44,
+                  child: AnimatedBuilder(
+                    animation: _livePulseController,
+                    builder: (context, _) {
+                      return CustomPaint(
+                        painter: _LivePulsePainter(
+                          progress: _livePulseController.value,
+                          color: const Color(0xFF10B981),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(height: 10),
-            Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 11, color: Colors.grey),
-            ),
-          ],
+          Switch(
+            value: _isOnline,
+            onChanged: (value) {
+              HapticFeedback.mediumImpact();
+              setState(() {
+                _isOnline = value;
+                if (value && !_livePulseController.isAnimating) {
+                  _livePulseController.repeat();
+                }
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _glassCard({required Widget child, double radius = 16}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.72),
+            borderRadius: BorderRadius.circular(radius),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF93C5FD).withValues(alpha: 0.17),
+                blurRadius: 20,
+                spreadRadius: 0,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: child,
         ),
       ),
     );
@@ -1667,6 +1750,98 @@ class _RootScreenState extends State<_RootScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _LivePulsePainter extends CustomPainter {
+  final double progress;
+  final Color color;
+
+  const _LivePulsePainter({required this.progress, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    const maxRadius = 18.0;
+
+    for (var i = 0; i < 3; i++) {
+      final shifted = (progress + (i * 0.33)) % 1.0;
+      final radius = 6 + (maxRadius * shifted);
+      final alpha = (1.0 - shifted).clamp(0.0, 1.0) * 0.26;
+      final paint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.6
+        ..color = color.withValues(alpha: alpha);
+      canvas.drawCircle(center, radius, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _LivePulsePainter oldDelegate) {
+    return oldDelegate.progress != progress || oldDelegate.color != color;
+  }
+}
+
+class _AnimatedEarningsBars extends StatelessWidget {
+  final int value;
+  final int maxValue;
+
+  const _AnimatedEarningsBars({required this.value, required this.maxValue});
+
+  @override
+  Widget build(BuildContext context) {
+    final safeMax = maxValue <= 0 ? 1 : maxValue;
+    final ratio = (value / safeMax).clamp(0.0, 1.0);
+
+    return Row(
+      children: [
+        Expanded(
+          child: _bar(ratio: ratio, color: const Color(0xFF0B1533)),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _bar(
+            ratio: (ratio * 0.82).clamp(0.0, 1.0),
+            color: const Color(0xFF1D4ED8),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _bar(
+            ratio: (ratio * 0.66).clamp(0.0, 1.0),
+            color: const Color(0xFF38BDF8),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _bar({required double ratio, required Color color}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: SizedBox(
+        height: 8,
+        child: Stack(
+          children: [
+            Container(color: const Color(0xFFE2E8F0)),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TweenAnimationBuilder<double>(
+                duration: const Duration(milliseconds: 480),
+                curve: kGlobalAnimationCurve,
+                tween: Tween<double>(begin: 0, end: ratio),
+                builder: (context, animated, _) {
+                  return FractionallySizedBox(
+                    widthFactor: animated,
+                    child: Container(color: color),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
