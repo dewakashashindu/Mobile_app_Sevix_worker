@@ -611,4 +611,3 @@ class _WalletTransaction {
     required this.type,
   });
 }
-

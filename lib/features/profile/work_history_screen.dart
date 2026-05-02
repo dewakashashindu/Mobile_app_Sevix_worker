@@ -45,13 +45,40 @@ class WorkHistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    final backgroundColor = isDarkMode
+        ? const Color(0xFF111215)
+        : const Color(0xFFF3F6FC);
+    final surfaceColor = isDarkMode ? const Color(0xFF181B25) : Colors.white;
+    final borderColor = isDarkMode
+        ? const Color(0xFF2C3144)
+        : const Color(0xFFE2E8F0);
+    final titleColor = isDarkMode ? Colors.white : const Color(0xFF0F172A);
+    final bodyColor = isDarkMode
+        ? const Color(0xFFCBD5E1)
+        : const Color(0xFF64748B);
+
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF3F6FC),
+        backgroundColor: backgroundColor,
         appBar: AppBar(
           title: Text(_t('Work History', 'වැඩ ඉතිහාසය', 'வேலை வரலாறு')),
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          foregroundColor: titleColor,
+          elevation: 0,
           bottom: TabBar(
+            labelColor: isDarkMode
+                ? const Color(0xFF93C5FD)
+                : const Color(0xFF0B1533),
+            unselectedLabelColor: isDarkMode
+                ? const Color(0xFF94A3B8)
+                : const Color(0xFF64748B),
+            indicatorColor: isDarkMode
+                ? const Color(0xFF93C5FD)
+                : const Color(0xFF0B1533),
             tabs: [
               Tab(
                 text: _t(
@@ -203,6 +230,17 @@ class _JobListTabState extends State<_JobListTab> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    final surfaceColor = isDarkMode ? const Color(0xFF181B25) : Colors.white;
+    final borderColor = isDarkMode
+        ? const Color(0xFF2C3144)
+        : const Color(0xFFE2E8F0);
+    final titleColor = isDarkMode ? Colors.white : const Color(0xFF0F172A);
+    final bodyColor = isDarkMode
+        ? const Color(0xFFCBD5E1)
+        : const Color(0xFF64748B);
+
     if (_errorType != null) {
       return RefreshIndicator(
         onRefresh: _loadJobs,
@@ -232,33 +270,32 @@ class _JobListTabState extends State<_JobListTab> {
             itemBuilder: (_, index) {
               return Card(
                 margin: const EdgeInsets.only(bottom: 10),
+                color: surfaceColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
+                  side: BorderSide(color: borderColor),
                 ),
-                child: const Padding(
-                  padding: EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(child: SkeletonBox(height: 16)),
-                          SizedBox(width: 10),
-                          SkeletonBox(width: 72, height: 18),
-                        ],
-                      ),
-                      SizedBox(height: 10),
-                      SkeletonBox(width: 180, height: 12),
-                      SizedBox(height: 10),
-                      Row(
-                        children: [
-                          SkeletonBox(width: 70, height: 12),
-                          Spacer(),
-                          SkeletonBox(width: 80, height: 12),
-                        ],
-                      ),
-                    ],
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(child: SkeletonBox(height: 16)),
+                        SizedBox(width: 10),
+                        SkeletonBox(width: 72, height: 18),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    SkeletonBox(width: 180, height: 12),
+                    SizedBox(height: 10),
+                    Row(
+                      children: [
+                        SkeletonBox(width: 70, height: 12),
+                        Spacer(),
+                        SkeletonBox(width: 80, height: 12),
+                      ],
+                    ),
+                  ],
                 ),
               );
             },
@@ -278,10 +315,10 @@ class _JobListTabState extends State<_JobListTab> {
             Center(
               child: Text(
                 widget.emptyText,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF64748B),
+                  color: bodyColor,
                 ),
               ),
             ),
@@ -305,8 +342,10 @@ class _JobListTabState extends State<_JobListTab> {
 
           return Card(
             margin: const EdgeInsets.only(bottom: 10),
+            color: surfaceColor,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
+              side: BorderSide(color: borderColor),
             ),
             child: Padding(
               padding: const EdgeInsets.all(12),
@@ -318,10 +357,10 @@ class _JobListTabState extends State<_JobListTab> {
                       Expanded(
                         child: Text(
                           job.jobTitle,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFF0F172A),
+                            color: titleColor,
                           ),
                         ),
                       ),
@@ -348,9 +387,9 @@ class _JobListTabState extends State<_JobListTab> {
                   const SizedBox(height: 8),
                   Text(
                     '${_t('Customer', 'පාරිභෝගිකයා', 'வாடிக்கையாளர்')}: ${job.customerName}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: Color(0xFF334155),
+                      color: bodyColor,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -365,10 +404,7 @@ class _JobListTabState extends State<_JobListTab> {
                       const SizedBox(width: 5),
                       Text(
                         _formatDate(job.date),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF64748B),
-                        ),
+                        style: TextStyle(fontSize: 12, color: bodyColor),
                       ),
                       const Spacer(),
                       const Icon(
@@ -379,9 +415,9 @@ class _JobListTabState extends State<_JobListTab> {
                       const SizedBox(width: 5),
                       Text(
                         job.earnings,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
-                          color: Color(0xFF0F172A),
+                          color: titleColor,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -396,4 +432,3 @@ class _JobListTabState extends State<_JobListTab> {
     );
   }
 }
-

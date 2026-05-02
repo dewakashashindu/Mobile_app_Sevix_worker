@@ -219,6 +219,22 @@ class _RootScreenState extends State<_RootScreen>
     }
   }
 
+  String _localized({
+    required String en,
+    required String si,
+    required String ta,
+  }) {
+    switch (_language) {
+      case 'si':
+        return si;
+      case 'ta':
+        return ta;
+      case 'en':
+      default:
+        return en;
+    }
+  }
+
   double _parseDistanceKm(String input) {
     final cleaned = input.toLowerCase().replaceAll('km', '').trim();
     return double.tryParse(cleaned) ?? 0;
@@ -667,6 +683,14 @@ class _RootScreenState extends State<_RootScreen>
     final deltaPercent = baseline == 0
         ? 0
         : ((delta.abs() / baseline) * 100).round();
+    final isDarkMode = widget.isDarkMode;
+    final pageBackground = isDarkMode
+        ? const Color(0xFF111215)
+        : const Color(0xFFF3F6FC);
+    final titleColor = isDarkMode ? Colors.white : const Color(0xFF0B1533);
+    final bodyColor = isDarkMode
+        ? const Color(0xFFCBD5E1)
+        : const Color(0xFF334155);
 
     Widget body;
     switch (_activeTab) {
@@ -680,12 +704,18 @@ class _RootScreenState extends State<_RootScreen>
                 margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
                 padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFF07122D),
-                      Color(0xFF0B1533),
-                      Color(0xFF173775),
-                    ],
+                  gradient: LinearGradient(
+                    colors: isDarkMode
+                        ? const [
+                            Color(0xFF07101E),
+                            Color(0xFF0B1533),
+                            Color(0xFF173775),
+                          ]
+                        : const [
+                            Color(0xFF07122D),
+                            Color(0xFF0B1533),
+                            Color(0xFF173775),
+                          ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -744,7 +774,11 @@ class _RootScreenState extends State<_RootScreen>
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Welcome to Sevix Worker',
+                                  _localized(
+                                    en: 'Welcome to Sevix Worker',
+                                    si: 'Sevix Worker වෙත සාදරයෙන් පිළිගනිමු',
+                                    ta: 'Sevix Worker-க்கு வரவேற்கிறோம்',
+                                  ),
                                   style: TextStyle(
                                     color: Colors.white.withOpacity(0.82),
                                     fontSize: 13,
@@ -770,7 +804,11 @@ class _RootScreenState extends State<_RootScreen>
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Jobs are matched based on your profile and service area',
+                          _localized(
+                            en: 'Jobs are matched based on your profile and service area',
+                            si: 'ඔබගේ පැතිකඩ සහ සේවා පරාසය අනුව රැකියා ගැලපේ',
+                            ta: 'உங்கள் சுயவிவரம் மற்றும் சேவை பகுதியின் அடிப்படையில் வேலைகள் பொருத்தப்படுகின்றன',
+                          ),
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.92),
                             fontSize: 13,
@@ -784,15 +822,18 @@ class _RootScreenState extends State<_RootScreen>
                           children: [
                             _headerChip(
                               icon: Icons.work_outline,
-                              label: '${_jobRequests.length} new jobs',
+                              label:
+                                  '${_jobRequests.length} ${_localized(en: 'new jobs', si: 'නව රැකියා', ta: 'புதிய வேலைகள்')}',
                             ),
                             _headerChip(
                               icon: Icons.history_toggle_off,
-                              label: '$_activeJobsCount active',
+                              label:
+                                  '$_activeJobsCount ${_localized(en: 'active', si: 'සක්‍රීය', ta: 'செயலில்')}',
                             ),
                             _headerChip(
                               icon: Icons.location_on_outlined,
-                              label: '$_serviceRadius km radius',
+                              label:
+                                  '$_serviceRadius ${_localized(en: 'km radius', si: 'කි.මී. පරාසය', ta: 'கிமீ வரம்பு')}',
                             ),
                           ],
                         ),
@@ -820,10 +861,11 @@ class _RootScreenState extends State<_RootScreen>
                                   color: Color(0xFF0B1533),
                                 ),
                                 const SizedBox(width: 8),
-                                const Expanded(
+                                Expanded(
                                   child: Text(
                                     'Visible on Customer Map',
                                     style: TextStyle(
+                                      color: titleColor,
                                       fontWeight: FontWeight.w700,
                                       fontSize: 15,
                                     ),
@@ -838,28 +880,45 @@ class _RootScreenState extends State<_RootScreen>
                               width: double.infinity,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    Color(0xFFDCE8FF),
-                                    Color(0xFFF3F8FF),
-                                  ],
+                                gradient: LinearGradient(
+                                  colors: isDarkMode
+                                      ? const [
+                                          Color(0xFF13213A),
+                                          Color(0xFF0F172A),
+                                        ]
+                                      : const [
+                                          Color(0xFFDCE8FF),
+                                          Color(0xFFF3F8FF),
+                                        ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                 ),
                                 border: Border.all(
-                                  color: const Color(0xFFC9D8F8),
+                                  color: isDarkMode
+                                      ? const Color(0xFF2C3144)
+                                      : const Color(0xFFC9D8F8),
                                 ),
                               ),
                               child: Center(
                                 child: Text(
                                   _isOnline
-                                      ? 'Online and discoverable for nearby customers'
-                                      : 'Offline - hidden from customer map',
+                                      ? _localized(
+                                          en: 'Online and discoverable for nearby customers',
+                                          si: 'සක්‍රීයයි - අසල ගනුදෙනුකරුවන්ට දැකිය හැක',
+                                          ta: 'ஆன்லைனில் - அருகிலுள்ள வாடிக்கையாளர்களுக்கு காணப்படும்',
+                                        )
+                                      : _localized(
+                                          en: 'Offline - hidden from customer map',
+                                          si: 'අක්‍රියයි - පාරිභෝගික සිතියමෙන් සඟවා ඇත',
+                                          ta: 'ஆஃப்லைன் - வாடிக்கையாளர் வரைபடத்தில் மறைக்கப்பட்டது',
+                                        ),
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
                                     color: _isOnline
-                                        ? const Color(0xFF0B1533)
+                                        ? (isDarkMode
+                                              ? Colors.white
+                                              : const Color(0xFF0B1533))
                                         : const Color(0xFFB91C1C),
                                   ),
                                 ),
@@ -872,10 +931,16 @@ class _RootScreenState extends State<_RootScreen>
                                 vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.55),
+                                color: isDarkMode
+                                    ? const Color(
+                                        0xFF101521,
+                                      ).withValues(alpha: 0.92)
+                                    : Colors.white.withValues(alpha: 0.55),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                  color: const Color(0xFFCBD8EE),
+                                  color: isDarkMode
+                                      ? const Color(0xFF2C3144)
+                                      : const Color(0xFFCBD8EE),
                                 ),
                               ),
                               child: Column(
@@ -889,9 +954,14 @@ class _RootScreenState extends State<_RootScreen>
                                         color: Color(0xFF0B1533),
                                       ),
                                       const SizedBox(width: 6),
-                                      const Text(
-                                        'Worker Location',
+                                      Text(
+                                        _localized(
+                                          en: 'Worker Location',
+                                          si: 'සේවක ස්ථානය',
+                                          ta: 'தொழிலாளர் இருப்பிடம்',
+                                        ),
                                         style: TextStyle(
+                                          color: titleColor,
                                           fontWeight: FontWeight.w700,
                                           fontSize: 12,
                                         ),
@@ -912,25 +982,38 @@ class _RootScreenState extends State<_RootScreen>
                                           Icons.edit_location_alt_outlined,
                                           size: 16,
                                         ),
-                                        label: const Text('Edit'),
+                                        label: Text(
+                                          _localized(
+                                            en: 'Edit',
+                                            si: 'සකසන්න',
+                                            ta: 'திருத்து',
+                                          ),
+                                          style: TextStyle(
+                                            color: isDarkMode
+                                                ? const Color(0xFF93C5FD)
+                                                : null,
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     _currentLocation,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFF334155),
+                                      color: bodyColor,
                                     ),
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    'Service radius: $_serviceRadius km',
-                                    style: const TextStyle(
+                                    '${_localized(en: 'Service radius', si: 'සේවා පරාසය', ta: 'சேவை பரப்பு')}: $_serviceRadius km',
+                                    style: TextStyle(
                                       fontSize: 12,
-                                      color: Color(0xFF10B981),
+                                      color: isDarkMode
+                                          ? const Color(0xFF34D399)
+                                          : const Color(0xFF10B981),
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -947,7 +1030,9 @@ class _RootScreenState extends State<_RootScreen>
                       child: ElevatedButton.icon(
                         onPressed: _openJobFeed,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0B1533),
+                          backgroundColor: isDarkMode
+                              ? const Color(0xFF0F4C81)
+                              : const Color(0xFF0B1533),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
@@ -955,9 +1040,13 @@ class _RootScreenState extends State<_RootScreen>
                           ),
                         ),
                         icon: const Icon(Icons.gavel_rounded),
-                        label: const Text(
-                          'Start Bidding',
-                          style: TextStyle(
+                        label: Text(
+                          _localized(
+                            en: 'Start Bidding',
+                            si: 'ලංසු දැමීම ආරම්භ කරන්න',
+                            ta: 'போலிங்கைத் தொடங்கவும்',
+                          ),
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
                           ),
@@ -969,7 +1058,9 @@ class _RootScreenState extends State<_RootScreen>
                       SizedBox(
                         width: double.infinity,
                         child: Card(
-                          color: const Color(0xFFEFF6FF),
+                          color: isDarkMode
+                              ? const Color(0xFF171A24)
+                              : const Color(0xFFEFF6FF),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
@@ -978,25 +1069,50 @@ class _RootScreenState extends State<_RootScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'Active Job In Progress',
+                                Text(
+                                  _localized(
+                                    en: 'Active Job In Progress',
+                                    si: 'සක්‍රීය රැකියාව ප්‍රගතියේ පවතී',
+                                    ta: 'செயலில் உள்ள வேலை நடைபெற்று வருகிறது',
+                                  ),
                                   style: TextStyle(
                                     fontWeight: FontWeight.w700,
-                                    color: Color(0xFF0B1533),
+                                    color: titleColor,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
                                   '${activeJob.category} - ${activeJob.customerName}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontWeight: FontWeight.w600,
+                                    color: bodyColor,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
                                 ElevatedButton.icon(
                                   onPressed: _openActiveJobExecution,
                                   icon: const Icon(Icons.play_circle_outline),
-                                  label: const Text('Open Active Job'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: isDarkMode
+                                        ? const Color(0xFF2563EB)
+                                        : const Color(0xFF1D4ED8),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 10,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    elevation: 1,
+                                  ),
+                                  label: Text(
+                                    _localized(
+                                      en: 'Open Active Job',
+                                      si: 'සක්‍රීය රැකියාව විවෘත කරන්න',
+                                      ta: 'செயலில் உள்ள வேலையைத் திறக்கவும்',
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -1015,7 +1131,9 @@ class _RootScreenState extends State<_RootScreen>
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFDBEAFE),
+                                    color: isDarkMode
+                                        ? const Color(0xFF1F2A44)
+                                        : const Color(0xFFDBEAFE),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: const Icon(
@@ -1025,12 +1143,17 @@ class _RootScreenState extends State<_RootScreen>
                                   ),
                                 ),
                                 const SizedBox(width: 10),
-                                const Expanded(
+                                Expanded(
                                   child: Text(
-                                    'Earnings Summary',
+                                    _localized(
+                                      en: 'Earnings Summary',
+                                      si: 'උපයීම් සාරාංශය',
+                                      ta: 'வருமான சுருக்கம்',
+                                    ),
                                     style: TextStyle(
                                       fontWeight: FontWeight.w800,
                                       fontSize: 16,
+                                      color: titleColor,
                                     ),
                                   ),
                                 ),
@@ -1069,11 +1192,16 @@ class _RootScreenState extends State<_RootScreen>
                               ),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(14),
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    Color(0xFF0F172A),
-                                    Color(0xFF1E3A8A),
-                                  ],
+                                gradient: LinearGradient(
+                                  colors: isDarkMode
+                                      ? const [
+                                          Color(0xFF0B1220),
+                                          Color(0xFF1E3A8A),
+                                        ]
+                                      : const [
+                                          Color(0xFF0F172A),
+                                          Color(0xFF1E3A8A),
+                                        ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                 ),
@@ -1092,8 +1220,16 @@ class _RootScreenState extends State<_RootScreen>
                                 children: [
                                   Text(
                                     _earningsWindow == 'today'
-                                        ? 'Today\'s earnings'
-                                        : 'Weekly earnings',
+                                        ? _localized(
+                                            en: 'Today\'s earnings',
+                                            si: 'අද උපයීම්',
+                                            ta: 'இன்றைய வருமானம்',
+                                          )
+                                        : _localized(
+                                            en: 'Weekly earnings',
+                                            si: 'සතිපතා උපයීම්',
+                                            ta: 'வாராந்த வருமானம்',
+                                          ),
                                     style: TextStyle(
                                       color: Colors.white.withValues(
                                         alpha: 0.78,
@@ -1136,14 +1272,26 @@ class _RootScreenState extends State<_RootScreen>
                             ),
                             const SizedBox(height: 12),
                             SegmentedButton<String>(
-                              segments: const [
+                              segments: [
                                 ButtonSegment<String>(
                                   value: 'today',
-                                  label: Text('Today'),
+                                  label: Text(
+                                    _localized(
+                                      en: 'Today',
+                                      si: 'අද',
+                                      ta: 'இன்று',
+                                    ),
+                                  ),
                                 ),
                                 ButtonSegment<String>(
                                   value: 'week',
-                                  label: Text('This Week'),
+                                  label: Text(
+                                    _localized(
+                                      en: 'This Week',
+                                      si: 'මෙම සතිය',
+                                      ta: 'இந்த வாரம்',
+                                    ),
+                                  ),
                                 ),
                               ],
                               selected: {_earningsWindow},
@@ -1159,7 +1307,11 @@ class _RootScreenState extends State<_RootScreen>
                               children: [
                                 Expanded(
                                   child: _earningsChip(
-                                    title: 'Pending',
+                                    title: _localized(
+                                      en: 'Pending',
+                                      si: 'අපේක්ෂිත',
+                                      ta: 'நிலுவை',
+                                    ),
                                     value: 'Rs. ${_earnings.pending}',
                                     icon: Icons.schedule,
                                     color: const Color(0xFFF59E0B),
@@ -1168,7 +1320,11 @@ class _RootScreenState extends State<_RootScreen>
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: _earningsChip(
-                                    title: 'Completed',
+                                    title: _localized(
+                                      en: 'Completed',
+                                      si: 'සම්පූර්ණයි',
+                                      ta: 'முடிந்தது',
+                                    ),
                                     value: '${_earnings.completedJobs}',
                                     icon: Icons.task_alt,
                                     color: const Color(0xFF10B981),
@@ -1177,7 +1333,11 @@ class _RootScreenState extends State<_RootScreen>
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: _earningsChip(
-                                    title: 'Monthly',
+                                    title: _localized(
+                                      en: 'Monthly',
+                                      si: 'මාසික',
+                                      ta: 'மாதாந்திர',
+                                    ),
                                     value: 'Rs. ${_earnings.month}',
                                     icon: Icons.calendar_month,
                                     color: const Color(0xFF2563EB),
@@ -1207,9 +1367,13 @@ class _RootScreenState extends State<_RootScreen>
                           ),
                         ),
                         icon: const Icon(Icons.verified_user_outlined),
-                        label: const Text(
-                          'Open Profile & Portfolio',
-                          style: TextStyle(fontWeight: FontWeight.w700),
+                        label: Text(
+                          _localized(
+                            en: 'Open Profile & Portfolio',
+                            si: 'පැතිකඩ සහ පෝර්ට්ෆෝලියෝ විවෘත කරන්න',
+                            ta: 'சுயவிவரம் & தொகுப்பைத் திறக்கவும்',
+                          ),
+                          style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
                     ),
@@ -1231,9 +1395,13 @@ class _RootScreenState extends State<_RootScreen>
                           ),
                         ),
                         icon: const Icon(Icons.assignment_turned_in_outlined),
-                        label: const Text(
-                          'Bid Status',
-                          style: TextStyle(fontWeight: FontWeight.w700),
+                        label: Text(
+                          _localized(
+                            en: 'Bid Status',
+                            si: 'ලංසු තත්ත්වය',
+                            ta: 'போலி நிலை',
+                          ),
+                          style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
                     ),
@@ -1258,8 +1426,12 @@ class _RootScreenState extends State<_RootScreen>
                         ),
                         const SizedBox(height: 10),
                         if (matchingLeads.isEmpty)
-                          const Text(
-                            'No nearby leads match your current skills right now.',
+                          Text(
+                            _localized(
+                              en: 'No nearby leads match your current skills right now.',
+                              si: 'දැනට ඔබගේ කුසලතා සමඟ ගැළපෙන අසල ලීඩ් නැත.',
+                              ta: 'தற்போது உங்கள் திறமைகளுக்கு பொருந்தும் அருகிலுள்ள வாய்ப்புகள் இல்லை.',
+                            ),
                           ),
                         ...matchingLeads
                             .take(3)
@@ -1290,7 +1462,13 @@ class _RootScreenState extends State<_RootScreen>
                           child: TextButton.icon(
                             onPressed: _openJobFeed,
                             icon: const Icon(Icons.arrow_forward),
-                            label: const Text('View All Leads'),
+                            label: Text(
+                              _localized(
+                                en: 'View All Leads',
+                                si: 'සියලු ලීඩ් බලන්න',
+                                ta: 'அனைத்து வாய்ப்புகளையும் பார்க்கவும்',
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -1308,7 +1486,11 @@ class _RootScreenState extends State<_RootScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Quick Stats',
+                          _localized(
+                            en: 'Quick Stats',
+                            si: 'ඉක්මන් සංඛ්‍යාලේඛන',
+                            ta: 'விரைவு புள்ளிவிவரங்கள்',
+                          ),
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
@@ -1320,7 +1502,11 @@ class _RootScreenState extends State<_RootScreen>
                           children: [
                             Expanded(
                               child: _statTile(
-                                title: 'Pending Jobs',
+                                title: _localized(
+                                  en: 'Pending Jobs',
+                                  si: 'අපේක්ෂිත රැකියා',
+                                  ta: 'நிலுவை வேலைகள்',
+                                ),
                                 value: '${_jobRequests.length}',
                                 icon: Icons.pending_actions,
                                 color: const Color(0xFFF59E0B),
@@ -1329,7 +1515,11 @@ class _RootScreenState extends State<_RootScreen>
                             const SizedBox(width: 10),
                             Expanded(
                               child: _statTile(
-                                title: 'Today Earnings',
+                                title: _localized(
+                                  en: 'Today Earnings',
+                                  si: 'අද උපයීම්',
+                                  ta: 'இன்றைய வருமானம்',
+                                ),
                                 value: 'Rs. ${_earnings.today}',
                                 icon: Icons.payments_outlined,
                                 color: const Color(0xFF10B981),
@@ -1338,7 +1528,11 @@ class _RootScreenState extends State<_RootScreen>
                             const SizedBox(width: 10),
                             Expanded(
                               child: _statTile(
-                                title: 'Rating',
+                                title: _localized(
+                                  en: 'Rating',
+                                  si: 'ශ්‍රේණිගත කිරීම',
+                                  ta: 'மதிப்பீடு',
+                                ),
                                 value: _rating.toStringAsFixed(1),
                                 icon: Icons.star,
                                 color: const Color(0xFF0B1533),
@@ -1358,7 +1552,11 @@ class _RootScreenState extends State<_RootScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Shortcuts',
+                      _localized(
+                        en: 'Shortcuts',
+                        si: 'කෙටි මාර්ග',
+                        ta: 'குறுக்கு வழிகள்',
+                      ),
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -1370,8 +1568,13 @@ class _RootScreenState extends State<_RootScreen>
                       children: [
                         Expanded(
                           child: _shortcutCard(
-                            title: 'New Jobs',
-                            subtitle: '${_jobRequests.length} open',
+                            title: _localized(
+                              en: 'New Jobs',
+                              si: 'නව රැකියා',
+                              ta: 'புதிய வேலைகள்',
+                            ),
+                            subtitle:
+                                '${_jobRequests.length} ${_localized(en: 'open', si: 'විවෘතයි', ta: 'திறந்த')}',
                             icon: Icons.campaign_outlined,
                             color: const Color(0xFF0B1533),
                             onTap: () {
@@ -1382,8 +1585,13 @@ class _RootScreenState extends State<_RootScreen>
                         const SizedBox(width: 10),
                         Expanded(
                           child: _shortcutCard(
-                            title: 'Active Jobs',
-                            subtitle: '$_activeJobsCount running',
+                            title: _localized(
+                              en: 'Active Jobs',
+                              si: 'සක්‍රීය රැකියා',
+                              ta: 'செயலில் உள்ள வேலைகள்',
+                            ),
+                            subtitle:
+                                '$_activeJobsCount ${_localized(en: 'running', si: 'ධාවනය වෙමින්', ta: 'இயங்குகிறது')}',
                             icon: Icons.work_history_outlined,
                             color: const Color(0xFF10B981),
                             onTap: () {
@@ -1394,8 +1602,16 @@ class _RootScreenState extends State<_RootScreen>
                         const SizedBox(width: 10),
                         Expanded(
                           child: _shortcutCard(
-                            title: 'Profile',
-                            subtitle: 'Skills & gallery',
+                            title: _localized(
+                              en: 'Profile',
+                              si: 'පැතිකඩ',
+                              ta: 'சுயவிவரம்',
+                            ),
+                            subtitle: _localized(
+                              en: 'Skills & gallery',
+                              si: 'කුසලතා සහ ගැලරිය',
+                              ta: 'திறன்கள் & கேலரி',
+                            ),
                             icon: Icons.verified_user_outlined,
                             color: const Color(0xFF7C3AED),
                             onTap: () {
@@ -1410,8 +1626,16 @@ class _RootScreenState extends State<_RootScreen>
                       children: [
                         Expanded(
                           child: _shortcutCard(
-                            title: 'Wallet',
-                            subtitle: 'Balance',
+                            title: _localized(
+                              en: 'Wallet',
+                              si: 'පසුම්බිය',
+                              ta: 'பணப்பை',
+                            ),
+                            subtitle: _localized(
+                              en: 'Balance',
+                              si: 'ශේෂය',
+                              ta: 'இருப்பு',
+                            ),
                             icon: Icons.account_balance_wallet_outlined,
                             color: const Color(0xFFF59E0B),
                             onTap: _openWallet,
@@ -1420,8 +1644,16 @@ class _RootScreenState extends State<_RootScreen>
                         const SizedBox(width: 10),
                         Expanded(
                           child: _shortcutCard(
-                            title: 'Payments',
-                            subtitle: 'Escrow status',
+                            title: _localized(
+                              en: 'Payments',
+                              si: 'ගෙවීම්',
+                              ta: 'கொடுப்பனவுகள்',
+                            ),
+                            subtitle: _localized(
+                              en: 'Escrow status',
+                              si: 'එස්ක්‍රෝ තත්ත්වය',
+                              ta: 'எஸ்க்ரோ நிலை',
+                            ),
                             icon: Icons.payments_outlined,
                             color: const Color(0xFF0EA5E9),
                             onTap: _openPaymentHistory,
@@ -1434,8 +1666,16 @@ class _RootScreenState extends State<_RootScreen>
                       children: [
                         Expanded(
                           child: _shortcutCard(
-                            title: 'Analytics',
-                            subtitle: 'Earnings & ratings',
+                            title: _localized(
+                              en: 'Analytics',
+                              si: 'විශ්ලේෂණ',
+                              ta: 'பகுப்பாய்வு',
+                            ),
+                            subtitle: _localized(
+                              en: 'Earnings & ratings',
+                              si: 'උපයීම් සහ ශ්‍රේණි',
+                              ta: 'வருமானம் & மதிப்பீடுகள்',
+                            ),
                             icon: Icons.insights_outlined,
                             color: const Color(0xFF1D4ED8),
                             onTap: _openAnalyticsDashboard,
@@ -1444,8 +1684,16 @@ class _RootScreenState extends State<_RootScreen>
                         const SizedBox(width: 10),
                         Expanded(
                           child: _shortcutCard(
-                            title: 'Schedule',
-                            subtitle: 'Calendar view',
+                            title: _localized(
+                              en: 'Schedule',
+                              si: 'කාලසටහන',
+                              ta: 'அட்டவணை',
+                            ),
+                            subtitle: _localized(
+                              en: 'Calendar view',
+                              si: 'දින දර්ශන දර්ශනය',
+                              ta: 'நாட்காட்டி பார்வை',
+                            ),
                             icon: Icons.calendar_month_outlined,
                             color: const Color(0xFF16A34A),
                             onTap: _openScheduleCalendar,
@@ -1454,8 +1702,16 @@ class _RootScreenState extends State<_RootScreen>
                         const SizedBox(width: 10),
                         Expanded(
                           child: _shortcutCard(
-                            title: 'Portfolio',
-                            subtitle: 'Project photos',
+                            title: _localized(
+                              en: 'Portfolio',
+                              si: 'පෝර්ට්ෆෝලියෝ',
+                              ta: 'போர்ட்ஃபோலியோ',
+                            ),
+                            subtitle: _localized(
+                              en: 'Project photos',
+                              si: 'ව්‍යාපෘති ඡායාරූප',
+                              ta: 'திட்ட புகைப்படங்கள்',
+                            ),
                             icon: Icons.photo_library_outlined,
                             color: const Color(0xFF9333EA),
                             onTap: _openPortfolioManager,
@@ -1468,8 +1724,16 @@ class _RootScreenState extends State<_RootScreen>
                       children: [
                         Expanded(
                           child: _shortcutCard(
-                            title: 'Plans',
-                            subtitle: 'Subscription tiers',
+                            title: _localized(
+                              en: 'Plans',
+                              si: 'සැලසුම්',
+                              ta: 'திட்டங்கள்',
+                            ),
+                            subtitle: _localized(
+                              en: 'Subscription tiers',
+                              si: 'දායකත්ව මට්ටම්',
+                              ta: 'சந்தா நிலைகள்',
+                            ),
                             icon: Icons.workspace_premium_outlined,
                             color: const Color(0xFFF59E0B),
                             onTap: _openSubscriptionPlans,
@@ -1478,8 +1742,16 @@ class _RootScreenState extends State<_RootScreen>
                         const SizedBox(width: 10),
                         Expanded(
                           child: _shortcutCard(
-                            title: 'Boost',
-                            subtitle: 'Featured listing',
+                            title: _localized(
+                              en: 'Boost',
+                              si: 'ප්‍රවර්ධනය',
+                              ta: 'மேம்படுத்து',
+                            ),
+                            subtitle: _localized(
+                              en: 'Featured listing',
+                              si: 'විශේෂ ලැයිස්තුව',
+                              ta: 'சிறப்புப் பட்டியல்',
+                            ),
                             icon: Icons.campaign_outlined,
                             color: const Color(0xFF0EA5E9),
                             onTap: _openFeaturedListing,
@@ -1488,8 +1760,16 @@ class _RootScreenState extends State<_RootScreen>
                         const SizedBox(width: 10),
                         Expanded(
                           child: _shortcutCard(
-                            title: 'Trust',
-                            subtitle: 'Score details',
+                            title: _localized(
+                              en: 'Trust',
+                              si: 'විශ්වාසය',
+                              ta: 'நம்பிக்கை',
+                            ),
+                            subtitle: _localized(
+                              en: 'Score details',
+                              si: 'ලකුණු විස්තර',
+                              ta: 'மதிப்பெண் விவரங்கள்',
+                            ),
                             icon: Icons.verified_user,
                             color: const Color(0xFF2563EB),
                             onTap: _openTrustScoreDetails,
@@ -1568,8 +1848,56 @@ class _RootScreenState extends State<_RootScreen>
     }
 
     return Scaffold(
-      body: SafeArea(child: body),
+      backgroundColor: pageBackground,
+      body: Stack(
+        children: [
+          if (isDarkMode)
+            Positioned(
+              top: -120,
+              right: -90,
+              child: Container(
+                width: 280,
+                height: 280,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      const Color(0xFF3B82F6).withValues(alpha: 0.22),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          if (isDarkMode)
+            Positioned(
+              bottom: -140,
+              left: -80,
+              child: Container(
+                width: 280,
+                height: 280,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      const Color(0xFF14B8A6).withValues(alpha: 0.16),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          SafeArea(child: body),
+        ],
+      ),
       bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: isDarkMode ? const Color(0xFF0F1118) : Colors.white,
+        selectedItemColor: isDarkMode
+            ? const Color(0xFF93C5FD)
+            : const Color(0xFF0B1533),
+        unselectedItemColor: isDarkMode
+            ? const Color(0xFF94A3B8)
+            : const Color(0xFF64748B),
         currentIndex: _activeTab.index,
         type: BottomNavigationBarType.fixed,
         onTap: (index) {
@@ -1582,12 +1910,16 @@ class _RootScreenState extends State<_RootScreen>
           BottomNavigationBarItem(
             icon: const Icon(Icons.home_outlined),
             activeIcon: const Icon(Icons.home),
-            label: 'Home',
+            label: _localized(en: 'Home', si: 'මුල් පිටුව', ta: 'முகப்பு'),
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.work_outline),
             activeIcon: const Icon(Icons.work),
-            label: 'Work History',
+            label: _localized(
+              en: 'Work History',
+              si: 'වැඩ ඉතිහාසය',
+              ta: 'வேலை வரலாறு',
+            ),
           ),
           BottomNavigationBarItem(
             icon: Stack(
@@ -1658,7 +1990,7 @@ class _RootScreenState extends State<_RootScreen>
                   ),
               ],
             ),
-            label: 'Chat',
+            label: _localized(en: 'Chat', si: 'කතාබහ', ta: 'அரட்டை'),
           ),
           const BottomNavigationBarItem(
             icon: Icon(Icons.settings_outlined),
@@ -1681,13 +2013,17 @@ class _RootScreenState extends State<_RootScreen>
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
+          color: color.withValues(alpha: widget.isDarkMode ? 0.16 : 0.08),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 24, color: color),
+            Icon(
+              icon,
+              size: 24,
+              color: widget.isDarkMode ? Colors.white : color,
+            ),
             const SizedBox(height: 8),
             Text(
               value,
@@ -1696,7 +2032,7 @@ class _RootScreenState extends State<_RootScreen>
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: color,
+                color: widget.isDarkMode ? Colors.white : color,
               ),
             ),
             const SizedBox(height: 2),
@@ -1704,7 +2040,12 @@ class _RootScreenState extends State<_RootScreen>
               title,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+              style: TextStyle(
+                fontSize: 11,
+                color: widget.isDarkMode
+                    ? const Color(0xFF94A3B8)
+                    : Colors.grey.shade700,
+              ),
             ),
           ],
         ),
@@ -1731,17 +2072,26 @@ class _RootScreenState extends State<_RootScreen>
             children: [
               CircleAvatar(
                 radius: 15,
-                backgroundColor: color.withValues(alpha: 0.12),
-                child: Icon(icon, size: 16, color: color),
+                backgroundColor: color.withValues(
+                  alpha: widget.isDarkMode ? 0.18 : 0.12,
+                ),
+                child: Icon(
+                  icon,
+                  size: 16,
+                  color: widget.isDarkMode ? Colors.white : color,
+                ),
               ),
               const SizedBox(height: 10),
               Text(
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
+                  color: widget.isDarkMode
+                      ? Colors.white
+                      : const Color(0xFF111827),
                 ),
               ),
               const SizedBox(height: 2),
@@ -1749,7 +2099,12 @@ class _RootScreenState extends State<_RootScreen>
                 subtitle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 11, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: widget.isDarkMode
+                      ? const Color(0xFF94A3B8)
+                      : Colors.grey,
+                ),
               ),
             ],
           ),
@@ -1767,9 +2122,11 @@ class _RootScreenState extends State<_RootScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
+        color: color.withValues(alpha: widget.isDarkMode ? 0.18 : 0.10),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: color.withValues(alpha: widget.isDarkMode ? 0.35 : 0.2),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1778,10 +2135,12 @@ class _RootScreenState extends State<_RootScreen>
           const SizedBox(height: 4),
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF64748B),
+              color: widget.isDarkMode
+                  ? const Color(0xFFCBD5E1)
+                  : const Color(0xFF64748B),
             ),
           ),
           const SizedBox(height: 1),
@@ -1792,7 +2151,7 @@ class _RootScreenState extends State<_RootScreen>
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w800,
-              color: color,
+              color: widget.isDarkMode ? Colors.white : color,
             ),
           ),
         ],
@@ -1850,12 +2209,20 @@ class _RootScreenState extends State<_RootScreen>
         filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.72),
+            color: widget.isDarkMode
+                ? const Color(0xFF181B25).withValues(alpha: 0.96)
+                : Colors.white.withValues(alpha: 0.72),
             borderRadius: BorderRadius.circular(radius),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+            border: Border.all(
+              color: widget.isDarkMode
+                  ? const Color(0xFF2C3144)
+                  : Colors.white.withValues(alpha: 0.2),
+            ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF93C5FD).withValues(alpha: 0.17),
+                color: widget.isDarkMode
+                    ? Colors.black.withValues(alpha: 0.35)
+                    : const Color(0xFF93C5FD).withValues(alpha: 0.17),
                 blurRadius: 20,
                 spreadRadius: 0,
                 offset: const Offset(0, 8),
@@ -1872,9 +2239,15 @@ class _RootScreenState extends State<_RootScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.13),
+        color: widget.isDarkMode
+            ? Colors.white.withOpacity(0.08)
+            : Colors.white.withOpacity(0.13),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withOpacity(0.18)),
+        border: Border.all(
+          color: widget.isDarkMode
+              ? Colors.white.withOpacity(0.12)
+              : Colors.white.withOpacity(0.18),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1945,47 +2318,54 @@ class _LocationMapPickerDialogState extends State<_LocationMapPickerDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.sizeOf(context);
+
     return AlertDialog(
       title: const Text('Pick Location on Map'),
-      content: SizedBox(
-        width: 360,
-        height: 340,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: GoogleMap(
-                  initialCameraPosition: CameraPosition(
-                    target: widget.initialPosition,
-                    zoom: 13,
-                  ),
-                  markers: {
-                    Marker(
-                      markerId: const MarkerId('selected-location'),
-                      position: _selectedPosition,
+      content: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: screenSize.width * 0.9,
+          maxHeight: screenSize.height * 0.7,
+        ),
+        child: SizedBox(
+          width: screenSize.width * 0.9,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target: widget.initialPosition,
+                      zoom: 13,
                     ),
-                  },
-                  onTap: (latLng) {
-                    setState(() {
-                      _selectedPosition = latLng;
-                    });
-                  },
+                    markers: {
+                      Marker(
+                        markerId: const MarkerId('selected-location'),
+                        position: _selectedPosition,
+                      ),
+                    },
+                    onTap: (latLng) {
+                      setState(() {
+                        _selectedPosition = latLng;
+                      });
+                    },
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              '${_selectedPosition.latitude.toStringAsFixed(5)}, ${_selectedPosition.longitude.toStringAsFixed(5)}',
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              'Tap the map to move the marker.',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
-            ),
-          ],
+              const SizedBox(height: 10),
+              Text(
+                '${_selectedPosition.latitude.toStringAsFixed(5)}, ${_selectedPosition.longitude.toStringAsFixed(5)}',
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Tap the map to move the marker.',
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+              ),
+            ],
+          ),
         ),
       ),
       actions: [

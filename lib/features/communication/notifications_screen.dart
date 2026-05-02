@@ -352,4 +352,3 @@ class _WorkerNotification {
     required this.isRead,
   });
 }
-

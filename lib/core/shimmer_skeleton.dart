@@ -30,6 +30,14 @@ class _ShimmerSkeletonState extends State<ShimmerSkeleton>
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = isDarkMode
+        ? const Color(0xFF334155)
+        : const Color(0xFFE2E8F0);
+    final highlightColor = isDarkMode
+        ? const Color(0xFF475569)
+        : const Color(0xFFF8FAFC);
+
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
@@ -39,11 +47,7 @@ class _ShimmerSkeletonState extends State<ShimmerSkeleton>
             return LinearGradient(
               begin: Alignment(-1.0 + (2.0 * _controller.value), 0),
               end: Alignment(1.0 + (2.0 * _controller.value), 0),
-              colors: const [
-                Color(0xFFE2E8F0),
-                Color(0xFFF8FAFC),
-                Color(0xFFE2E8F0),
-              ],
+              colors: [baseColor, highlightColor, baseColor],
               stops: const [0.2, 0.5, 0.8],
             ).createShader(bounds);
           },
@@ -69,14 +73,15 @@ class SkeletonBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final fillColor = isDarkMode
+        ? const Color(0xFF334155)
+        : const Color(0xFFE2E8F0);
+
     return Container(
       width: width,
       height: height,
-      decoration: BoxDecoration(
-        color: const Color(0xFFE2E8F0),
-        borderRadius: borderRadius,
-      ),
+      decoration: BoxDecoration(color: fillColor, borderRadius: borderRadius),
     );
   }
 }
-

@@ -294,6 +294,22 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Worker Registration & KYC')),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('Already have an account?'),
+              TextButton(
+                onPressed: widget.onNavigateToLogin,
+                child: const Text('Login'),
+              ),
+            ],
+          ),
+        ),
+      ),
       body: Stepper(
         type: StepperType.vertical,
         currentStep: state.step,
@@ -526,10 +542,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 12),
-                TextButton(
-                  onPressed: widget.onNavigateToLogin,
-                  child: const Text('Already have an account? Login'),
-                ),
               ],
             ),
           ),
@@ -670,4 +682,3 @@ class _SummaryTile extends StatelessWidget {
     );
   }
 }
-

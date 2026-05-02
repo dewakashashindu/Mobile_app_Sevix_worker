@@ -48,6 +48,11 @@ class _OtpScreenState extends State<OtpScreen> {
       'si': 'කේතය නැවත යවන්න',
       'ta': 'குறியீட்டை மீண்டும் அனுப்பவும்',
     },
+    'didNotReceive': {
+      'en': 'Didn\'t receive the code?',
+      'si': 'කේතය ලැබුනේ නැද්ද?',
+      'ta': 'குறியீடு கிடைக்கவில்லையா?',
+    },
     'resendIn': {
       'en': 'Resend in',
       'si': 'නැවත යැවීමට',
@@ -226,51 +231,59 @@ class _OtpScreenState extends State<OtpScreen> {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: List.generate(6, (index) {
-                      return SizedBox(
-                        width: 48,
-                        child: TextField(
-                          controller: _controllers[index],
-                          focusNode: _focusNodes[index],
-                          keyboardType: TextInputType.number,
-                          textAlign: TextAlign.center,
-                          maxLength: 1,
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: textPrimary,
-                          ),
-                          decoration: InputDecoration(
-                            counterText: '',
-                            filled: true,
-                            fillColor: cardBackground,
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 14,
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: borderColor,
-                                width: 2,
+                  Center(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: List.generate(6, (index) {
+                          return Padding(
+                            padding: EdgeInsets.only(right: index == 5 ? 0 : 8),
+                            child: SizedBox(
+                              width: 48,
+                              child: TextField(
+                                controller: _controllers[index],
+                                focusNode: _focusNodes[index],
+                                keyboardType: TextInputType.number,
+                                textAlign: TextAlign.center,
+                                maxLength: 1,
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: textPrimary,
+                                ),
+                                decoration: InputDecoration(
+                                  counterText: '',
+                                  filled: true,
+                                  fillColor: cardBackground,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: borderColor,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: primaryColor,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                onChanged: (v) => _onOtpChanged(v, index),
                               ),
                             ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: primaryColor,
-                                width: 2,
-                              ),
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onChanged: (v) => _onOtpChanged(v, index),
-                        ),
-                      );
-                    }),
+                          );
+                        }),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 32),
                   SizedBox(
@@ -301,7 +314,7 @@ class _OtpScreenState extends State<OtpScreen> {
                     child: Column(
                       children: [
                         Text(
-                          _t('otpSent'),
+                          _t('didNotReceive'),
                           style: TextStyle(color: textSecondary, fontSize: 14),
                           textAlign: TextAlign.center,
                         ),
@@ -340,4 +353,3 @@ class _OtpScreenState extends State<OtpScreen> {
     );
   }
 }
-

@@ -171,19 +171,29 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   }
 
   Widget _buildTypingIndicator() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.only(top: 8, left: 6),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDarkMode ? const Color(0xFF181B25) : Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+          border: Border.all(
+            color: isDarkMode
+                ? const Color(0xFF2C3144)
+                : const Color(0xFFE2E8F0),
+          ),
         ),
         child: Text(
           _t('Typing...', 'ටයිප් කරමින්...', 'தட்டச்சு செய்கிறார்...'),
-          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+          style: TextStyle(
+            fontSize: 12,
+            color: isDarkMode
+                ? const Color(0xFFCBD5E1)
+                : const Color(0xFF64748B),
+          ),
         ),
       ),
     );
@@ -214,6 +224,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   Widget _buildMessageBubble(ChatMessage message, Animation<double> animation) {
     final isMe = message.isMe;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return SizeTransition(
       sizeFactor: CurvedAnimation(parent: animation, curve: Curves.easeOut),
@@ -226,11 +237,20 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               : const EdgeInsets.all(8),
           constraints: const BoxConstraints(maxWidth: 270),
           decoration: BoxDecoration(
-            color: isMe ? const Color(0xFF0B1533) : Colors.white,
+            color: isMe
+                ? (isDarkMode
+                      ? const Color(0xFF0F4C81)
+                      : const Color(0xFF0B1533))
+                : (isDarkMode ? const Color(0xFF181B25) : Colors.white),
             borderRadius: BorderRadius.circular(16),
             border: isMe
                 ? null
-                : Border.all(color: const Color(0xFFE2E8F0), width: 1),
+                : Border.all(
+                    color: isDarkMode
+                        ? const Color(0xFF2C3144)
+                        : const Color(0xFFE2E8F0),
+                    width: 1,
+                  ),
           ),
           child: Column(
             crossAxisAlignment: isMe
@@ -241,7 +261,11 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 Text(
                   message.text,
                   style: TextStyle(
-                    color: isMe ? Colors.white : const Color(0xFF0F172A),
+                    color: isMe
+                        ? Colors.white
+                        : (isDarkMode
+                              ? const Color(0xFFE2E8F0)
+                              : const Color(0xFF0F172A)),
                     fontSize: 14,
                     height: 1.3,
                   ),
@@ -255,7 +279,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                     gradient: LinearGradient(
                       colors: isMe
                           ? const [Color(0xFF1E3A8A), Color(0xFF2563EB)]
-                          : const [Color(0xFFE2E8F0), Color(0xFFCBD5E1)],
+                          : (isDarkMode
+                                ? const [Color(0xFF24314A), Color(0xFF1B2434)]
+                                : const [Color(0xFFE2E8F0), Color(0xFFCBD5E1)]),
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -266,7 +292,11 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                       children: [
                         Icon(
                           Icons.image_outlined,
-                          color: isMe ? Colors.white : const Color(0xFF334155),
+                          color: isMe
+                              ? Colors.white
+                              : (isDarkMode
+                                    ? const Color(0xFFE2E8F0)
+                                    : const Color(0xFF334155)),
                           size: 30,
                         ),
                         const SizedBox(height: 6),
@@ -275,7 +305,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                           style: TextStyle(
                             color: isMe
                                 ? Colors.white
-                                : const Color(0xFF334155),
+                                : (isDarkMode
+                                      ? const Color(0xFFE2E8F0)
+                                      : const Color(0xFF334155)),
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -293,7 +325,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                       fontSize: 11,
                       color: isMe
                           ? const Color.fromARGB(210, 255, 255, 255)
-                          : const Color(0xFF64748B),
+                          : (isDarkMode
+                                ? const Color(0xFF94A3B8)
+                                : const Color(0xFF64748B)),
                     ),
                   ),
                   if (isMe) ...[
@@ -321,9 +355,25 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDarkMode
+        ? const Color(0xFF111215)
+        : const Color(0xFFF3F6FC);
+    final appBarForeground = isDarkMode
+        ? Colors.white
+        : const Color(0xFF0B1533);
+    final inputSurface = isDarkMode ? const Color(0xFF181B25) : Colors.white;
+    final inputBorder = isDarkMode
+        ? const Color(0xFF2C3144)
+        : const Color(0xFFE2E8F0);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F6FC),
+      backgroundColor: backgroundColor,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: appBarForeground,
+        elevation: 0,
         title: Row(
           children: [
             CircleAvatar(
@@ -396,21 +446,26 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                           'செய்தி தட்டச்சு செய்யவும்',
                         ),
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: inputSurface,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 14,
                           vertical: 12,
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24),
-                          borderSide: const BorderSide(
-                            color: Color(0xFFE2E8F0),
-                          ),
+                          borderSide: BorderSide(color: inputBorder),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24),
-                          borderSide: const BorderSide(
-                            color: Color(0xFFE2E8F0),
+                          borderSide: BorderSide(color: inputBorder),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(
+                            color: isDarkMode
+                                ? const Color(0xFF60A5FA)
+                                : const Color(0xFF0B1533),
+                            width: 1.5,
                           ),
                         ),
                       ),
@@ -437,4 +492,3 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     );
   }
 }
-

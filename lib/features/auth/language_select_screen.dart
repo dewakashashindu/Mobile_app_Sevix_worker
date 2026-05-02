@@ -116,92 +116,86 @@ class _LanguageSelectScreenState extends State<LanguageSelectScreen> {
               builder: (context, value, child) {
                 return Opacity(opacity: value, child: child);
               },
-              child: Column(
-                children: [
-                  const SizedBox(height: 24),
-                  _Header(),
-                  Expanded(
-                    child: Padding(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: EdgeInsets.only(bottom: size.height * 0.03),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 24),
+                    _Header(),
+                    Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24.0),
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
+                          const SizedBox(height: 24),
                           Column(
-                            children: [
-                              const SizedBox(height: 24),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: const [
-                                  Text(
-                                    'Choose Your Language',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    'ඔබගේ භාෂාව තෝරන්න • உங்கள் மொழியைத் தேர்ந்தெடுக்கவும்',
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      color: Color.fromARGB(235, 255, 255, 255),
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 24),
-                              Column(
-                                children: _languages.map((language) {
-                                  final isSelected =
-                                      _selectedLanguage == language.code;
-                                  return Padding(
-                                    padding: const EdgeInsets.only(
-                                      bottom: 18.0,
-                                    ),
-                                    child: _LanguageCard(
-                                      language: language,
-                                      isSelected: isSelected,
-                                      onTap: () =>
-                                          _handleLanguageTap(language.code),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              _ContinueButton(
-                                enabled: _selectedLanguage != null,
-                                label: _selectedLanguage == null
-                                    ? 'Select Your Language'
-                                    : _getContinueText(),
-                                onPressed: _selectedLanguage != null
-                                    ? _handleContinue
-                                    : null,
-                              ),
-                              const SizedBox(height: 12),
-                              const Text(
-                                '✨ You can change this anytime in settings',
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: const [
+                              Text(
+                                'Choose Your Language',
                                 style: TextStyle(
-                                  fontSize: 13,
-                                  color: Color.fromARGB(179, 255, 255, 255),
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                'ඔබගේ භාෂාව තෝරන්න • உங்கள் மொழியைத் தேர்ந்தெடுக்கவும்',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  color: Color.fromARGB(235, 255, 255, 255),
                                   fontWeight: FontWeight.w500,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
-                              SizedBox(height: size.height * 0.02),
                             ],
                           ),
+                          const SizedBox(height: 24),
+                          Column(
+                            children: _languages.map((language) {
+                              final isSelected =
+                                  _selectedLanguage == language.code;
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 18.0),
+                                child: _LanguageCard(
+                                  language: language,
+                                  isSelected: isSelected,
+                                  onTap: () =>
+                                      _handleLanguageTap(language.code),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 12),
+                          _ContinueButton(
+                            enabled: _selectedLanguage != null,
+                            label: _selectedLanguage == null
+                                ? 'Select Your Language'
+                                : _getContinueText(),
+                            onPressed: _selectedLanguage != null
+                                ? _handleContinue
+                                : null,
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            '✨ You can change this anytime in settings',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Color.fromARGB(179, 255, 255, 255),
+                              fontWeight: FontWeight.w500,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: size.height * 0.02),
                         ],
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -612,4 +606,3 @@ class _ContinueButton extends StatelessWidget {
     return GestureDetector(onTap: onPressed, child: buttonChild);
   }
 }
-

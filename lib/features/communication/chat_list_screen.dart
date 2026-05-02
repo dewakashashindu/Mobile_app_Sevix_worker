@@ -196,6 +196,20 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    final backgroundColor = isDarkMode
+        ? const Color(0xFF111215)
+        : const Color(0xFFF3F6FC);
+    final surfaceColor = isDarkMode ? const Color(0xFF181B25) : Colors.white;
+    final surfaceBorderColor = isDarkMode
+        ? const Color(0xFF2C3144)
+        : const Color(0xFFE2E8F0);
+    final titleColor = isDarkMode ? Colors.white : const Color(0xFF0F172A);
+    final bodyColor = isDarkMode
+        ? const Color(0xFFCBD5E1)
+        : const Color(0xFF64748B);
+
     final query = _searchController.text.trim().toLowerCase();
     final conversations = _seedConversations.where((conversation) {
       if (query.isEmpty) return true;
@@ -204,8 +218,14 @@ class _ChatListScreenState extends State<ChatListScreen> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F6FC),
-      appBar: AppBar(title: Text(_t('Chats', 'සංවාද', 'அரட்டைகள்'))),
+      backgroundColor: backgroundColor,
+      appBar: AppBar(
+        title: Text(_t('Chats', 'සංවාද', 'அரட்டைகள்')),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: titleColor,
+        elevation: 0,
+      ),
       body: Column(
         children: [
           Padding(
@@ -221,14 +241,23 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 ),
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: surfaceColor,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  borderSide: BorderSide(color: surfaceBorderColor),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  borderSide: BorderSide(color: surfaceBorderColor),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: isDarkMode
+                        ? const Color(0xFF60A5FA)
+                        : const Color(0xFF0B1533),
+                    width: 1.5,
+                  ),
                 ),
               ),
             ),
@@ -250,8 +279,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
                               vertical: 10,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: surfaceColor,
                               borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: surfaceBorderColor),
                             ),
                             child: const Row(
                               children: [
@@ -350,9 +380,25 @@ class _ConversationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isDarkMode ? const Color(0xFF181B25) : Colors.white;
+    final borderColor = isDarkMode
+        ? const Color(0xFF2C3144)
+        : const Color(0xFFE2E8F0);
+    final titleColor = isDarkMode ? Colors.white : const Color(0xFF0F172A);
+    final bodyColor = isDarkMode
+        ? const Color(0xFFCBD5E1)
+        : const Color(0xFF64748B);
+    final timeColor = isDarkMode
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF94A3B8);
+
     return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(14),
+      color: surfaceColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: borderColor),
+      ),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
@@ -378,9 +424,10 @@ class _ConversationTile extends StatelessWidget {
                   children: [
                     Text(
                       conversation.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
+                        color: titleColor,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -388,10 +435,7 @@ class _ConversationTile extends StatelessWidget {
                       conversation.lastMessage,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF64748B),
-                      ),
+                      style: TextStyle(fontSize: 13, color: bodyColor),
                     ),
                   ],
                 ),
@@ -402,10 +446,7 @@ class _ConversationTile extends StatelessWidget {
                 children: [
                   Text(
                     timeText,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Color(0xFF94A3B8),
-                    ),
+                    style: TextStyle(fontSize: 11, color: timeColor),
                   ),
                   const SizedBox(height: 6),
                   if (conversation.unreadCount > 0)
@@ -458,6 +499,12 @@ class _ChatEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDarkMode ? Colors.white : const Color(0xFF334155);
+    final bodyColor = isDarkMode
+        ? const Color(0xFFCBD5E1)
+        : const Color(0xFF64748B);
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -476,10 +523,10 @@ class _ChatEmptyState extends StatelessWidget {
                 'තවම සංවාද නොමැත',
                 'இன்னும் உரையாடல்கள் இல்லை',
               ),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF334155),
+                color: titleColor,
               ),
             ),
             const SizedBox(height: 6),
@@ -490,7 +537,7 @@ class _ChatEmptyState extends StatelessWidget {
                 'வாடிக்கையாளர்கள் செய்தி அனுப்பியதும், உரையாடல்கள் இங்கே தோன்றும்.',
               ),
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              style: TextStyle(fontSize: 13, color: bodyColor),
             ),
           ],
         ),
@@ -498,4 +545,3 @@ class _ChatEmptyState extends StatelessWidget {
     );
   }
 }
-

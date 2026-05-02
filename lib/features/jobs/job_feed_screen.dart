@@ -640,4 +640,3 @@ class _InlineCountdownTextState extends State<_InlineCountdownText> {
     );
   }
 }
-
