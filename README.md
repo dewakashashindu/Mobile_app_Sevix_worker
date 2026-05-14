@@ -1,0 +1,87 @@
+# SEVIX Worker App
+
+SEVIX Worker is a Flutter app for field-service professionals in Sri Lanka to discover jobs, bid, execute work with proof, and receive payouts.
+
+## Product Flow
+
+1. Onboarding and identity: language selection, OTP auth, and manual KYC.
+2. Job discovery: live feed based on skill and service radius.
+3. Bidding and negotiation: bid amount + ETA with status tracking.
+4. Active execution: navigation and phase flow (En Route -> Arrived -> In Progress -> Review).
+5. Completion and payout: mandatory photo + signature, then payment request.
+
+## Deep Analysis Snapshot
+
+Strengths already in this codebase:
+- End-to-end worker journey is represented in screens and navigation.
+- Multilingual UX is implemented across core flows.
+- Execution module includes map tracking, route rendering, and proof capture.
+- Wallet and escrow concepts are visible in payment history and payout setup.
+- Shimmer and loading UX primitives already exist in core.
+
+Gaps from prototype to production:
+- Safety needed a first-class SOS interaction during active jobs.
+- Near-arrival customer updates were manual instead of automated.
+- Completion proof could fail in weak network conditions.
+- Trust score concept needed a stronger visual badge treatment.
+- Haptic feedback was not wired to critical success milestones.
+
+## Implemented in This Update
+
+1. Active job safety and operations
+- Added an SOS button to active job navigation screen.
+- Added automated ETA customer update trigger when estimated arrival is <= 5 minutes.
+- Added phase-transition haptic feedback for higher quality interaction feel.
+
+2. Offline operational resilience
+- Added offline completion buffer backed by shared preferences.
+- If upload fails, completion proof is queued locally and job state is marked pending sync.
+- Added automatic retry sync on screen load and manual Retry Offline Sync action.
+
+3. Trust and profile UX
+- Added a computed Trust Score Badge section in profile.
+- Badge level now reflects aggregated rating quality (Top Rated, Trusted Pro, etc.).
+
+4. Premium interaction feedback
+- Added haptic feedback on successful bid submission and key execution milestones.
+
+## Recommended Next Priorities
+
+1. Add an expense tracker feature under features/expenses with receipt upload and reimbursement linking.
+2. Replace local AI-like bid heuristic with a backend-powered pricing recommender.
+3. Persist SOS events to backend with support ticket IDs and escalation workflow.
+4. Move execution, wallet, and profile state into Riverpod providers for stronger testability.
+5. Add integration tests for offline queue sync and active-job phase transitions.
+
+## Architecture Direction
+
+Use feature-first modules under lib/features as the source of truth:
+- features/auth
+- features/jobs
+- features/execution
+- features/communication
+- features/wallet
+- features/profile
+- features/expenses (next)
+- features/safety (optional split if SOS expands)
+
+Shared cross-feature assets stay in lib/core.
+
+## Technology Stack
+
+- Flutter 3.x with Material 3
+- Riverpod
+- Firebase Firestore + Firebase Storage
+- Google Maps + Directions API
+- Geolocator
+- Google ML Kit OCR
+
+## Run
+
+Use map-related defines when running:
+
+```bash
+flutter run \
+  --dart-define=GOOGLE_MAPS_API_KEY=YOUR_MAPS_KEY \
+  --dart-define=GOOGLE_DIRECTIONS_API_KEY=YOUR_DIRECTIONS_KEY
+```
